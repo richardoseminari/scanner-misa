@@ -3,217 +3,67 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <title>Scanner Misa</title>
-
-  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <title>Test Check-In</title>
 
   <style>
-    * {
-      box-sizing: border-box;
-    }
-
     body {
-      margin: 0;
-      background: #f3f4f6;
       font-family: Arial, sans-serif;
-      color: #111827;
-    }
-
-    .container {
-      max-width: 520px;
-      margin: auto;
-      padding: 16px;
-    }
-
-    .header,
-    .card {
-      background: white;
-      border-radius: 18px;
       padding: 20px;
-      margin-bottom: 16px;
-      box-shadow: 0 4px 14px rgba(0,0,0,.08);
-    }
-
-    .header {
-      text-align: center;
-    }
-
-    h1 {
-      margin: 0 0 6px;
-      font-size: 24px;
-    }
-
-    .subtitle {
-      color: #6b7280;
-      font-size: 14px;
-    }
-
-    label {
-      display: block;
-      font-weight: bold;
-      margin-bottom: 8px;
+      max-width: 500px;
+      margin: auto;
     }
 
     input {
       width: 100%;
       padding: 14px;
-      border: 1px solid #d1d5db;
-      border-radius: 12px;
       font-size: 16px;
+      box-sizing: border-box;
+      margin-bottom: 10px;
     }
 
     button {
       width: 100%;
       padding: 14px;
-      margin-top: 12px;
-      border: none;
-      border-radius: 12px;
       font-size: 16px;
       font-weight: bold;
-      cursor: pointer;
     }
 
-    .btn-start {
-      background: #2563eb;
-      color: white;
-    }
-
-    .btn-again {
-      background: #111827;
-      color: white;
-      display: none;
-    }
-
-    #scannerCard {
-      display: none;
-    }
-
-    #reader {
-      width: 100%;
-      overflow: hidden;
-      border-radius: 14px;
-    }
-
-    .status {
-      display: none;
-      margin-top: 16px;
-      padding: 18px;
-      border-radius: 14px;
-      text-align: center;
-      line-height: 1.5;
-      font-weight: bold;
-    }
-
-    .checking {
-      display: block;
-      background: #fef3c7;
-      color: #92400e;
-    }
-
-    .success {
-      display: block;
-      background: #dcfce7;
-      color: #166534;
-    }
-
-    .warning {
-      display: block;
-      background: #fef3c7;
-      color: #92400e;
-    }
-
-    .error {
-      display: block;
-      background: #fee2e2;
-      color: #991b1b;
-    }
-
-    .info {
-      display: none;
-      margin-top: 14px;
-      background: #f9fafb;
-      padding: 14px;
-      border-radius: 12px;
-      font-size: 14px;
-      line-height: 1.7;
-    }
-
-    .footer {
-      text-align: center;
-      color: #6b7280;
-      font-size: 12px;
-      padding: 10px;
+    #hasil {
+      margin-top: 20px;
+      padding: 15px;
+      background: #eee;
+      border-radius: 10px;
+      word-break: break-word;
     }
   </style>
 </head>
 
 <body>
 
-<div class="container">
+<h2>🧪 Test Check-In</h2>
 
-  <div class="header">
-    <h1>📷 Scanner Misa</h1>
-    <div class="subtitle">
-      Scan QR e-Ticket untuk Check-In
-    </div>
-  </div>
+<p>
+Masukkan ID_REGISTRASI yang sudah ada.
+</p>
 
-  <div class="card">
+<input
+  id="id"
+  value="REG-UND5UM9KXV"
+  placeholder="REG-xxxxxxxx"
+/>
 
-    <label for="petugas">
-      Nama Petugas
-    </label>
+<input
+  id="petugas"
+  value="TEST"
+  placeholder="Nama petugas"
+/>
 
-    <input
-      id="petugas"
-      type="text"
-      placeholder="Contoh: Richard"
-      autocomplete="off"
-    >
+<button onclick="testCheckIn()">
+  TEST CHECK-IN
+</button>
 
-    <button
-      type="button"
-      class="btn-start"
-      onclick="mulaiScanner()"
-    >
-      📷 MULAI SCANNER
-    </button>
-
-  </div>
-
-  <div
-    class="card"
-    id="scannerCard"
-  >
-
-    <div id="reader"></div>
-
-    <div
-      id="status"
-      class="status"
-    ></div>
-
-    <div
-      id="info"
-      class="info"
-    ></div>
-
-    <button
-      type="button"
-      id="again"
-      class="btn-again"
-      onclick="scanLagi()"
-    >
-      🔄 SCAN LAGI
-    </button>
-
-  </div>
-
-  <div class="footer">
-    Sistem Check-In Misa
-  </div>
-
+<div id="hasil">
+  Belum ada hasil.
 </div>
 
 
@@ -223,242 +73,78 @@ const APPS_SCRIPT_URL =
 "https://script.google.com/macros/s/AKfycbz53X4twAvOSWR8b5LuZW_Ven6SeNaPasnYMdAXr9qX6nkgNwl_2UlNoL_bS0VWfyzFGw/exec";
 
 
-let scanner = null;
-let scannerRunning = false;
-let processing = false;
-let petugas = "";
+/*
+ * CALLBACK TETAP
+ *
+ * Tidak dibuat secara random.
+ * Ini sengaja supaya kita menghilangkan
+ * kemungkinan masalah nama callback.
+ */
+
+function checkInCallback(response) {
+
+  console.log(
+    "RESPON APPS SCRIPT:",
+    response
+  );
+
+  document.getElementById("hasil").innerHTML =
+    "<b>✅ APPS SCRIPT TERHUBUNG</b><br><br>" +
+    "<pre>" +
+    escapeHtml(
+      JSON.stringify(
+        response,
+        null,
+        2
+      )
+    ) +
+    "</pre>";
+}
 
 
-/* =====================================================
-   MULAI
-===================================================== */
+function testCheckIn() {
 
-function mulaiScanner() {
+  const id =
+    document.getElementById("id")
+    .value
+    .trim();
 
-  petugas =
+  const petugas =
     document.getElementById("petugas")
     .value
     .trim();
 
-  if (!petugas) {
 
-    alert("Silakan isi nama petugas.");
+  if (!id) {
 
-    document.getElementById("petugas").focus();
-
-    return;
-  }
-
-  document.getElementById(
-    "scannerCard"
-  ).style.display = "block";
-
-  document.getElementById(
-    "again"
-  ).style.display = "none";
-
-  resetTampilan();
-
-  mulaiKamera();
-}
-
-
-/* =====================================================
-   KAMERA
-===================================================== */
-
-function mulaiKamera() {
-
-  if (scannerRunning) {
-    return;
-  }
-
-  scanner =
-    new Html5Qrcode("reader");
-
-  scanner
-    .start(
-      {
-        facingMode: "environment"
-      },
-      {
-        fps: 10,
-        qrbox: {
-          width: 250,
-          height: 250
-        }
-      },
-      qrBerhasil,
-      function() {}
-    )
-    .then(function() {
-
-      scannerRunning = true;
-
-    })
-    .catch(function(error) {
-
-      tampilError(
-        "❌ KAMERA TIDAK DAPAT DIBUKA",
-        "Pastikan browser mendapat izin kamera."
-      );
-
-      console.error(error);
-
-    });
-
-}
-
-
-/* =====================================================
-   QR BERHASIL
-===================================================== */
-
-function qrBerhasil(text) {
-
-  if (processing) {
-    return;
-  }
-
-  processing = true;
-
-  hentikanKamera();
-
-  /*
-   * QR E-TICKET KITA MEMANG LANGSUNG:
-   *
-   * REG-UND5UM9KXV
-   *
-   * Jadi tidak perlu parsing rumit.
-   */
-
-  const idRegistrasi =
-    text.trim();
-
-  if (
-    !/^REG-[A-Za-z0-9_-]+$/i.test(
-      idRegistrasi
-    )
-  ) {
-
-    tampilError(
-      "❌ QR TIDAK VALID",
-      "QR tidak berisi ID registrasi yang valid."
-    );
-
-    document.getElementById(
-      "again"
-    ).style.display = "block";
-
-    processing = false;
+    alert("ID registrasi belum diisi.");
 
     return;
   }
 
-  tampilChecking();
 
-  kirimCheckIn(
-    idRegistrasi
-  );
-}
-
-
-/* =====================================================
-   KIRIM CHECK-IN
-===================================================== */
-
-function kirimCheckIn(
-  idRegistrasi
-) {
-
-  const callbackName =
-    "checkIn_" +
-    Date.now() +
-    "_" +
-    Math.floor(
-      Math.random() * 100000
-    );
+  document.getElementById("hasil").innerHTML =
+    "⏳ Menghubungi Google Apps Script...";
 
 
   const script =
     document.createElement("script");
 
 
-  let selesai = false;
-
-
-  const timeout =
-    setTimeout(function() {
-
-      if (selesai) {
-        return;
-      }
-
-      selesai = true;
-
-      bersihkan(
-        script,
-        callbackName
-      );
-
-      tampilError(
-        "❌ SERVER CHECK-IN TIDAK DAPAT DIHUBUNGI",
-        "Google Apps Script tidak memberikan respons."
-      );
-
-      document.getElementById(
-        "again"
-      ).style.display = "block";
-
-      processing = false;
-
-    }, 20000);
-
-
-  window[callbackName] =
-    function(response) {
-
-      if (selesai) {
-        return;
-      }
-
-      selesai = true;
-
-      clearTimeout(timeout);
-
-      bersihkan(
-        script,
-        callbackName
-      );
-
-      tampilkanHasil(
-        response
-      );
-
-    };
-
-
   const url =
     APPS_SCRIPT_URL +
     "?action=checkin" +
     "&id=" +
-    encodeURIComponent(
-      idRegistrasi
-    ) +
+    encodeURIComponent(id) +
     "&petugas=" +
-    encodeURIComponent(
-      petugas
-    ) +
-    "&callback=" +
-    encodeURIComponent(
-      callbackName
-    ) +
+    encodeURIComponent(petugas) +
+    "&callback=checkInCallback" +
     "&_=" +
     Date.now();
 
 
   console.log(
-    "Check-in URL:",
+    "URL:",
     url
   );
 
@@ -466,32 +152,31 @@ function kirimCheckIn(
   script.src = url;
 
 
-  script.onerror =
+  script.onload =
     function() {
 
-      if (selesai) {
-        return;
-      }
-
-      selesai = true;
-
-      clearTimeout(timeout);
-
-      bersihkan(
-        script,
-        callbackName
+      console.log(
+        "Script Apps Script berhasil dimuat."
       );
 
-      tampilError(
-        "❌ SERVER CHECK-IN TIDAK DAPAT DIHUBUNGI",
-        "Google Apps Script tidak dapat diakses."
+    };
+
+
+  script.onerror =
+    function(error) {
+
+      console.error(
+        "SCRIPT ERROR:",
+        error
       );
 
-      document.getElementById(
-        "again"
-      ).style.display = "block";
-
-      processing = false;
+      document.getElementById("hasil").innerHTML =
+        "<b>❌ SCRIPT TIDAK BERHASIL DIMUAT</b><br><br>" +
+        "Browser berhasil membuka GitHub Pages, " +
+        "tetapi gagal menjalankan respons Google Apps Script.<br><br>" +
+        "<small>" +
+        escapeHtml(url) +
+        "</small>";
 
     };
 
@@ -499,533 +184,19 @@ function kirimCheckIn(
   document.body.appendChild(
     script
   );
-
 }
 
 
-/* =====================================================
-   HASIL
-===================================================== */
-
-function tampilkanHasil(
-  response
-) {
-
-  console.log(
-    "Response:",
-    response
-  );
-
-
-  if (!response) {
-
-    tampilError(
-      "❌ SERVER ERROR",
-      "Server tidak memberikan data."
-    );
-
-    selesaiScan();
-
-    return;
-  }
-
-
-  /*
-   * CHECK-IN BERHASIL
-   */
-
-  if (
-    response.success === true
-  ) {
-
-    tampilSukses(
-      response
-    );
-
-    selesaiScan();
-
-    return;
-  }
-
-
-  /*
-   * SUDAH CHECK-IN
-   */
-
-  if (
-    response.alreadyCheckedIn === true
-  ) {
-
-    tampilSudahCheckIn(
-      response
-    );
-
-    selesaiScan();
-
-    return;
-  }
-
-
-  /*
-   * TIKET TIDAK VALID
-   */
-
-  tampilError(
-    "❌ TIDAK TERDAFTAR",
-    response.message ||
-    "Tiket tidak dapat ditemukan."
-  );
-
-  selesaiScan();
-
-}
-
-
-/* =====================================================
-   SUKSES
-===================================================== */
-
-function tampilSukses(
-  data
-) {
-
-  const status =
-    document.getElementById(
-      "status"
-    );
-
-  status.className =
-    "status success";
-
-  status.innerHTML =
-    "✅ TERDAFTAR<br>" +
-    "<span style='font-size:14px;font-weight:normal'>" +
-    escapeHtml(
-      data.message ||
-      "Check-in berhasil."
-    ) +
-    "</span>";
-
-  status.style.display =
-    "block";
-
-
-  tampilInfo(
-    data
-  );
-}
-
-
-/* =====================================================
-   SUDAH CHECK-IN
-===================================================== */
-
-function tampilSudahCheckIn(
-  data
-) {
-
-  const status =
-    document.getElementById(
-      "status"
-    );
-
-  status.className =
-    "status warning";
-
-  status.innerHTML =
-    "⚠️ SUDAH CHECK-IN<br>" +
-    "<span style='font-size:14px;font-weight:normal'>" +
-    escapeHtml(
-      data.message ||
-      "Tiket ini sudah melakukan check-in."
-    ) +
-    "</span>";
-
-  status.style.display =
-    "block";
-
-
-  tampilInfo(
-    data
-  );
-}
-
-
-/* =====================================================
-   CHECKING
-===================================================== */
-
-function tampilChecking() {
-
-  const status =
-    document.getElementById(
-      "status"
-    );
-
-  status.className =
-    "status checking";
-
-  status.innerHTML =
-    "⏳ MEMERIKSA TIKET...";
-
-  status.style.display =
-    "block";
-
-
-  document.getElementById(
-    "info"
-  ).style.display =
-    "none";
-}
-
-
-/* =====================================================
-   ERROR
-===================================================== */
-
-function tampilError(
-  judul,
-  pesan
-) {
-
-  const status =
-    document.getElementById(
-      "status"
-    );
-
-  status.className =
-    "status error";
-
-  status.innerHTML =
-    judul +
-    "<br>" +
-    "<span style='font-size:14px;font-weight:normal'>" +
-    escapeHtml(
-      pesan
-    ) +
-    "</span>";
-
-  status.style.display =
-    "block";
-
-
-  document.getElementById(
-    "info"
-  ).style.display =
-    "none";
-}
-
-
-/* =====================================================
-   INFO TIKET
-===================================================== */
-
-function tampilInfo(
-  data
-) {
-
-  const info =
-    document.getElementById(
-      "info"
-    );
-
-
-  let html = "";
-
-
-  if (data.nama) {
-
-    html +=
-      "<div><b>Nama:</b> " +
-      escapeHtml(
-        data.nama
-      ) +
-      "</div>";
-
-  }
-
-
-  if (data.idRegistrasi) {
-
-    html +=
-      "<div><b>ID Registrasi:</b> " +
-      escapeHtml(
-        data.idRegistrasi
-      ) +
-      "</div>";
-
-  }
-
-
-  if (data.namaMisa) {
-
-    html +=
-      "<div><b>Misa:</b> " +
-      escapeHtml(
-        data.namaMisa
-      ) +
-      "</div>";
-
-  }
-
-
-  if (data.tanggal) {
-
-    html +=
-      "<div><b>Tanggal:</b> " +
-      escapeHtml(
-        data.tanggal
-      ) +
-      "</div>";
-
-  }
-
-
-  if (data.jam) {
-
-    html +=
-      "<div><b>Jam:</b> " +
-      escapeHtml(
-        data.jam
-      ) +
-      "</div>";
-
-  }
-
-
-  if (data.jumlah) {
-
-    html +=
-      "<div><b>Jumlah:</b> " +
-      escapeHtml(
-        data.jumlah
-      ) +
-      "</div>";
-
-  }
-
-
-  if (data.waktuCheckIn) {
-
-    html +=
-      "<div><b>Waktu Check-In:</b> " +
-      escapeHtml(
-        data.waktuCheckIn
-      ) +
-      "</div>";
-
-  }
-
-
-  if (data.petugasSebelumnya) {
-
-    html +=
-      "<div><b>Petugas:</b> " +
-      escapeHtml(
-        data.petugasSebelumnya
-      ) +
-      "</div>";
-
-  }
-
-
-  info.innerHTML =
-    html;
-
-  info.style.display =
-    "block";
-}
-
-
-/* =====================================================
-   SELESAI
-===================================================== */
-
-function selesaiScan() {
-
-  document.getElementById(
-    "again"
-  ).style.display =
-    "block";
-
-  processing = false;
-}
-
-
-/* =====================================================
-   SCAN LAGI
-===================================================== */
-
-function scanLagi() {
-
-  processing = false;
-
-  resetTampilan();
-
-  document.getElementById(
-    "again"
-  ).style.display =
-    "none";
-
-  mulaiKamera();
-}
-
-
-/* =====================================================
-   HENTIKAN KAMERA
-===================================================== */
-
-function hentikanKamera() {
-
-  if (
-    scanner &&
-    scannerRunning
-  ) {
-
-    scanner
-      .stop()
-      .then(function() {
-
-        scannerRunning = false;
-
-      })
-      .catch(function(error) {
-
-        console.error(error);
-
-        scannerRunning = false;
-
-      });
-
-  }
-}
-
-
-/* =====================================================
-   RESET
-===================================================== */
-
-function resetTampilan() {
-
-  const status =
-    document.getElementById(
-      "status"
-    );
-
-  status.style.display =
-    "none";
-
-  status.innerHTML =
-    "";
-
-  status.className =
-    "status";
-
-
-  const info =
-    document.getElementById(
-      "info"
-    );
-
-  info.style.display =
-    "none";
-
-  info.innerHTML =
-    "";
-}
-
-
-/* =====================================================
-   CLEANUP JSONP
-===================================================== */
-
-function bersihkan(
-  script,
-  callbackName
-) {
-
-  if (
-    script &&
-    script.parentNode
-  ) {
-
-    script.parentNode.removeChild(
-      script
-    );
-
-  }
-
-
-  try {
-
-    delete window[
-      callbackName
-    ];
-
-  } catch (error) {
-
-    window[
-      callbackName
-    ] = undefined;
-
-  }
-}
-
-
-/* =====================================================
-   ESCAPE HTML
-===================================================== */
-
-function escapeHtml(
-  value
-) {
-
-  if (
-    value === null ||
-    value === undefined
-  ) {
-
-    return "";
-
-  }
-
+function escapeHtml(value) {
 
   return String(value)
-    .replace(
-      /&/g,
-      "&amp;"
-    )
-    .replace(
-      /</g,
-      "&lt;"
-    )
-    .replace(
-      />/g,
-      "&gt;"
-    )
-    .replace(
-      /"/g,
-      "&quot;"
-    )
-    .replace(
-      /'/g,
-      "&#039;"
-    );
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+
 }
-
-
-/* =====================================================
-   TUTUP HALAMAN
-===================================================== */
-
-window.addEventListener(
-  "beforeunload",
-  function() {
-
-    hentikanKamera();
-
-  }
-);
 
 </script>
 
