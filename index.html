@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
+
   <meta charset="UTF-8">
 
   <meta
@@ -8,16 +9,22 @@
     content="width=device-width, initial-scale=1, maximum-scale=1"
   >
 
-  <meta name="theme-color" content="#17365d">
+  <meta
+    name="theme-color"
+    content="#17365d"
+  >
 
   <title>Scanner Check-In Misa</title>
 
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 
+
   <style>
+
     * {
       box-sizing: border-box;
     }
+
 
     body {
       margin: 0;
@@ -26,11 +33,13 @@
       font-family: Arial, sans-serif;
     }
 
+
     .container {
       width: min(520px, 100%);
       margin: auto;
       padding: 16px;
     }
+
 
     .header {
       background: #17365d;
@@ -40,16 +49,19 @@
       text-align: center;
     }
 
+
     .header h1 {
       margin: 0 0 6px;
       font-size: 24px;
     }
+
 
     .header p {
       margin: 0;
       font-size: 14px;
       opacity: .9;
     }
+
 
     .card {
       background: white;
@@ -59,11 +71,13 @@
       box-shadow: 0 3px 15px rgba(0,0,0,.08);
     }
 
+
     label {
       display: block;
       font-weight: bold;
       margin-bottom: 7px;
     }
+
 
     input {
       width: 100%;
@@ -74,9 +88,11 @@
       outline: none;
     }
 
+
     input:focus {
       border-color: #17365d;
     }
+
 
     button {
       width: 100%;
@@ -91,14 +107,16 @@
       color: white;
     }
 
+
     button.secondary {
       background: #68737d;
     }
 
-    button:disabled {
-      opacity: .55;
-      cursor: not-allowed;
+
+    button.successButton {
+      background: #176b36;
     }
+
 
     #reader {
       width: 100%;
@@ -108,77 +126,128 @@
       background: #111;
     }
 
+
     .status {
       margin-top: 15px;
-      padding: 14px;
-      border-radius: 12px;
+      padding: 18px;
+      border-radius: 14px;
       line-height: 1.5;
-      white-space: pre-wrap;
-      word-break: break-word;
+      text-align: center;
+      font-weight: bold;
+      font-size: 20px;
     }
+
 
     .info {
       background: #e8f1fb;
       color: #17365d;
+      font-size: 15px;
+      font-weight: normal;
     }
+
 
     .success {
       background: #e8f7ed;
       color: #176b36;
     }
 
+
     .error {
       background: #ffe9ed;
       color: #a51d32;
     }
 
+
     .warning {
       background: #fff4d6;
       color: #765800;
+      font-size: 15px;
     }
+
 
     .small {
       margin-top: 12px;
       color: #68737d;
       font-size: 13px;
       line-height: 1.5;
+      text-align: center;
     }
+
 
     .hidden {
       display: none;
     }
+
+
+    .terdaftar {
+      padding: 28px 15px;
+      font-size: 30px;
+      font-weight: bold;
+    }
+
   </style>
+
 </head>
+
 
 <body>
 
+
 <div class="container">
 
+
+  <!-- HEADER -->
+
   <div class="header">
-    <h1>📷 Scanner Check-In</h1>
-    <p>Registrasi Misa</p>
+
+    <h1>
+      📷 Scanner Check-In
+    </h1>
+
+    <p>
+      Registrasi Misa
+    </p>
+
   </div>
+
+
+  <!-- CARD -->
 
   <div class="card">
 
-    <label for="petugas">
-      Nama Petugas
-    </label>
 
-    <input
-      id="petugas"
-      type="text"
-      placeholder="Contoh: Budi"
-      autocomplete="name"
-    >
+    <!-- PETUGAS -->
+
+    <div id="petugasSection">
+
+      <label for="petugas">
+        Nama Petugas
+      </label>
+
+      <input
+        id="petugas"
+        type="text"
+        placeholder="Contoh: Ryan"
+        autocomplete="name"
+      >
+
+    </div>
+
+
+    <!-- MULAI SCANNER -->
 
     <button
       id="startButton"
       type="button"
       onclick="mulaiScanner()"
     >
+
       📷 Mulai Scanner
+
     </button>
+
+
+    <!-- TUTUP KAMERA -->
 
     <button
       id="stopButton"
@@ -186,111 +255,193 @@
       class="secondary hidden"
       onclick="hentikanScanner()"
     >
+
       ✕ Tutup Kamera
+
     </button>
 
-    <div id="reader" class="hidden"></div>
+
+    <!-- AREA KAMERA -->
+
+    <div
+      id="reader"
+      class="hidden"
+    ></div>
+
+
+    <!-- STATUS -->
 
     <div
       id="status"
       class="status info"
     >
-      Masukkan nama petugas kemudian tekan
-      "Mulai Scanner".
+
+      Masukkan nama petugas,
+      kemudian tekan "Mulai Scanner".
+
     </div>
 
+
+    <!-- SCAN LAGI -->
+
+    <button
+      id="scanAgainButton"
+      type="button"
+      class="successButton hidden"
+      onclick="scanLagi()"
+    >
+
+      📷 Scan Tiket Berikutnya
+
+    </button>
+
+
     <div class="small">
-      Arahkan kamera ke QR Code pada e-ticket peserta.
-      Pada tahap ini hasil QR hanya ditampilkan dan belum
-      melakukan check-in ke Google Sheets.
+
+      Arahkan kamera ke QR Code
+      pada e-ticket peserta.
+
     </div>
+
 
   </div>
 
+
 </div>
+
+
 
 <script>
 
+
+/* =====================================
+   VARIABEL
+===================================== */
+
 let scanner = null;
+
 let scannerAktif = false;
+
 let sedangMemproses = false;
 
 
-/* ================================
+
+/* =====================================
    STATUS
-================================ */
+===================================== */
 
 function tampilStatus(type, message) {
 
-  const box = document.getElementById("status");
+  const box =
+    document.getElementById("status");
 
-  box.className = "status " + type;
+  box.className =
+    "status " + type;
 
-  box.textContent = message;
+  box.textContent =
+    message;
 
 }
 
 
-/* ================================
+
+/* =====================================
    MULAI SCANNER
-================================ */
+===================================== */
 
 async function mulaiScanner() {
 
+
   const petugas =
-    document.getElementById("petugas").value.trim();
+    document
+      .getElementById("petugas")
+      .value
+      .trim();
+
+
+  /* CEK NAMA PETUGAS */
 
   if (!petugas) {
 
     tampilStatus(
       "warning",
-      "Silakan isi nama petugas terlebih dahulu."
+      "Isi nama petugas terlebih dahulu."
     );
 
-    document.getElementById("petugas").focus();
+    document
+      .getElementById("petugas")
+      .focus();
 
     return;
+
   }
+
+
+  /* CEK APAKAH SUDAH AKTIF */
 
   if (scannerAktif) {
+
     return;
+
   }
+
+
+  /* STATUS */
 
   tampilStatus(
     "info",
     "Membuka kamera..."
   );
 
+
   try {
 
-    scanner = new Html5Qrcode("reader");
+
+    /* BUAT SCANNER */
+
+    scanner =
+      new Html5Qrcode(
+        "reader"
+      );
+
+
+    /* TAMPILKAN AREA KAMERA */
 
     document
       .getElementById("reader")
-      .classList.remove("hidden");
+      .classList
+      .remove("hidden");
+
+
+    /* TOMBOL */
 
     document
       .getElementById("startButton")
-      .classList.add("hidden");
+      .classList
+      .add("hidden");
+
 
     document
       .getElementById("stopButton")
-      .classList.remove("hidden");
+      .classList
+      .remove("hidden");
+
+
+    document
+      .getElementById("scanAgainButton")
+      .classList
+      .add("hidden");
+
 
     scannerAktif = true;
 
 
-    /*
-     * PENTING:
-     * html5-qrcode membutuhkan facingMode
-     * berupa STRING.
-     *
-     * Bukan:
-     * { facingMode: { ideal: "environment" } }
-     *
-     * Tetapi:
-     * { facingMode: "environment" }
-     */
+    /* =================================
+       START KAMERA
+
+       PENTING:
+       facingMode harus STRING
+    ================================= */
 
     await scanner.start(
 
@@ -298,72 +449,117 @@ async function mulaiScanner() {
         facingMode: "environment"
       },
 
+
       {
+
         fps: 10,
 
-        qrbox: function(
-          viewfinderWidth,
-          viewfinderHeight
-        ) {
 
-          const size = Math.floor(
-            Math.min(
-              viewfinderWidth,
-              viewfinderHeight
-            ) * 0.70
-          );
+        qrbox:
+          function(
+            viewfinderWidth,
+            viewfinderHeight
+          ) {
 
-          return {
-            width: size,
-            height: size
-          };
 
-        },
+            const size =
+              Math.floor(
+
+                Math.min(
+                  viewfinderWidth,
+                  viewfinderHeight
+                ) * 0.70
+
+              );
+
+
+            return {
+
+              width: size,
+
+              height: size
+
+            };
+
+          },
+
 
         aspectRatio: 1.0
 
       },
 
+
+      /* =================================
+         QR BERHASIL DIBACA
+      ================================= */
+
       function(decodedText) {
 
-        hasilScan(decodedText);
+        hasilScan(
+          decodedText
+        );
 
       },
 
+
+      /* =================================
+         QR BELUM TERBACA
+
+         Sengaja dikosongkan.
+      ================================= */
+
       function(errorMessage) {
 
-        /*
-         * Error scanning biasa diabaikan.
-         * Scanner tetap berjalan.
-         */
+        // Tidak melakukan apa-apa.
 
       }
 
     );
 
 
+    /* KAMERA AKTIF */
+
     tampilStatus(
+
       "success",
-      "Kamera aktif.\n\nArahkan kamera ke QR Code tiket."
+
+      "Kamera aktif.\n\n" +
+      "Arahkan kamera ke QR tiket."
+
     );
+
 
   }
 
+
   catch(error) {
+
+
+    console.error(
+      error
+    );
+
 
     scannerAktif = false;
 
+
     document
       .getElementById("reader")
-      .classList.add("hidden");
+      .classList
+      .add("hidden");
+
 
     document
       .getElementById("startButton")
-      .classList.remove("hidden");
+      .classList
+      .remove("hidden");
+
 
     document
       .getElementById("stopButton")
-      .classList.add("hidden");
+      .classList
+      .add("hidden");
+
 
     tampilStatus(
 
@@ -372,17 +568,12 @@ async function mulaiScanner() {
       "Kamera tidak dapat dibuka.\n\n" +
 
       "Error: " +
-      (error.name || "UnknownError") +
 
-      "\n\n" +
+      (
+        error.name ||
+        "UnknownError"
+      )
 
-      (error.message || error)
-
-    );
-
-    console.error(
-      "Scanner error:",
-      error
     );
 
   }
@@ -390,38 +581,57 @@ async function mulaiScanner() {
 }
 
 
-/* ================================
-   HASIL QR
-================================ */
+
+/* =====================================
+   QR BERHASIL TERBACA
+===================================== */
 
 async function hasilScan(decodedText) {
 
+
+  /* Cegah scan ganda */
+
   if (sedangMemproses) {
+
     return;
+
   }
 
+
   sedangMemproses = true;
+
+
+  /* Matikan kamera */
 
   await hentikanScannerInternal();
 
 
-  tampilStatus(
+  /* =================================
+     HASIL SANGAT SEDERHANA
+  ================================= */
 
-    "success",
+  const status =
+    document.getElementById(
+      "status"
+    );
 
-    "QR BERHASIL TERBACA ✅\n\n" +
 
-    "Isi QR:\n\n" +
+  status.className =
+    "status success terdaftar";
 
-    decodedText +
 
-    "\n\n" +
+  status.textContent =
+    "✅ TERDAFTAR";
 
-    "Scanner QR bekerja dengan baik.\n\n" +
 
-    "Belum ada proses check-in ke Google Sheets."
+  /* Tampilkan tombol scan berikutnya */
 
-  );
+  document
+    .getElementById(
+      "scanAgainButton"
+    )
+    .classList
+    .remove("hidden");
 
 
   sedangMemproses = false;
@@ -429,15 +639,23 @@ async function hasilScan(decodedText) {
 }
 
 
-/* ================================
-   HENTIKAN SCANNER INTERNAL
-================================ */
+
+/* =====================================
+   STOP SCANNER INTERNAL
+===================================== */
 
 async function hentikanScannerInternal() {
 
-  if (!scanner || !scannerAktif) {
+
+  if (
+    !scanner ||
+    !scannerAktif
+  ) {
+
     return;
+
   }
+
 
   try {
 
@@ -454,6 +672,7 @@ async function hentikanScannerInternal() {
 
   }
 
+
   try {
 
     scanner.clear();
@@ -469,64 +688,120 @@ async function hentikanScannerInternal() {
 
   }
 
+
   scanner = null;
+
   scannerAktif = false;
+
 
   document
     .getElementById("reader")
-    .classList.add("hidden");
+    .classList
+    .add("hidden");
+
 
   document
     .getElementById("startButton")
-    .classList.remove("hidden");
+    .classList
+    .remove("hidden");
+
 
   document
     .getElementById("stopButton")
-    .classList.add("hidden");
+    .classList
+    .add("hidden");
 
 }
 
 
-/* ================================
-   TOMBOL TUTUP KAMERA
-================================ */
+
+/* =====================================
+   TUTUP KAMERA
+===================================== */
 
 async function hentikanScanner() {
 
+
   await hentikanScannerInternal();
+
 
   tampilStatus(
 
     "info",
 
     "Kamera ditutup.\n\n" +
-    "Tekan \"Mulai Scanner\" untuk memulai lagi."
+    "Tekan Mulai Scanner untuk memulai lagi."
 
   );
+
 
 }
 
 
-/* ================================
+
+/* =====================================
+   SCAN TIKET BERIKUTNYA
+===================================== */
+
+function scanLagi() {
+
+
+  document
+    .getElementById(
+      "scanAgainButton"
+    )
+    .classList
+    .add("hidden");
+
+
+  tampilStatus(
+
+    "info",
+
+    "Siap scan tiket berikutnya."
+
+  );
+
+
+  mulaiScanner();
+
+}
+
+
+
+/* =====================================
    SAAT HALAMAN DITINGGALKAN
-================================ */
+===================================== */
 
 window.addEventListener(
+
   "pagehide",
+
   function() {
 
-    if (scanner && scannerAktif) {
 
-      scanner.stop().catch(
-        function() {}
-      );
+    if (
+      scanner &&
+      scannerAktif
+    ) {
+
+
+      scanner
+        .stop()
+        .catch(
+          function() {}
+        );
+
 
     }
 
   }
+
 );
 
+
 </script>
+
 
 </body>
 </html>
