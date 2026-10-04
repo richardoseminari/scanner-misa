@@ -2,7 +2,11 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, maximum-scale=1"
+  >
 
   <meta name="theme-color" content="#17365d">
 
@@ -155,7 +159,6 @@
     <p>Registrasi Misa</p>
   </div>
 
-
   <div class="card">
 
     <label for="petugas">
@@ -206,13 +209,10 @@
 
 </div>
 
-
 <script>
 
 let scanner = null;
-
 let scannerAktif = false;
-
 let sedangMemproses = false;
 
 
@@ -240,7 +240,6 @@ async function mulaiScanner() {
   const petugas =
     document.getElementById("petugas").value.trim();
 
-
   if (!petugas) {
 
     tampilStatus(
@@ -253,47 +252,50 @@ async function mulaiScanner() {
     return;
   }
 
-
   if (scannerAktif) {
     return;
   }
-
 
   tampilStatus(
     "info",
     "Membuka kamera..."
   );
 
-
   try {
 
     scanner = new Html5Qrcode("reader");
-
 
     document
       .getElementById("reader")
       .classList.remove("hidden");
 
-
     document
       .getElementById("startButton")
       .classList.add("hidden");
-
 
     document
       .getElementById("stopButton")
       .classList.remove("hidden");
 
-
     scannerAktif = true;
 
+
+    /*
+     * PENTING:
+     * html5-qrcode membutuhkan facingMode
+     * berupa STRING.
+     *
+     * Bukan:
+     * { facingMode: { ideal: "environment" } }
+     *
+     * Tetapi:
+     * { facingMode: "environment" }
+     */
 
     await scanner.start(
 
       {
-        facingMode: {
-          ideal: "environment"
-        }
+        facingMode: "environment"
       },
 
       {
@@ -304,10 +306,12 @@ async function mulaiScanner() {
           viewfinderHeight
         ) {
 
-          const size = Math.min(
-            viewfinderWidth,
-            viewfinderHeight
-          ) * 0.70;
+          const size = Math.floor(
+            Math.min(
+              viewfinderWidth,
+              viewfinderHeight
+            ) * 0.70
+          );
 
           return {
             width: size,
@@ -328,8 +332,10 @@ async function mulaiScanner() {
 
       function(errorMessage) {
 
-        // Error scanning biasa diabaikan.
-        // Scanner tetap berjalan.
+        /*
+         * Error scanning biasa diabaikan.
+         * Scanner tetap berjalan.
+         */
 
       }
 
@@ -351,16 +357,13 @@ async function mulaiScanner() {
       .getElementById("reader")
       .classList.add("hidden");
 
-
     document
       .getElementById("startButton")
       .classList.remove("hidden");
 
-
     document
       .getElementById("stopButton")
       .classList.add("hidden");
-
 
     tampilStatus(
 
@@ -375,6 +378,11 @@ async function mulaiScanner() {
 
       (error.message || error)
 
+    );
+
+    console.error(
+      "Scanner error:",
+      error
     );
 
   }
@@ -392,12 +400,8 @@ async function hasilScan(decodedText) {
     return;
   }
 
-
   sedangMemproses = true;
 
-
-  // Hentikan scanner supaya QR yang sama
-  // tidak terbaca berkali-kali.
   await hentikanScannerInternal();
 
 
@@ -407,13 +411,13 @@ async function hasilScan(decodedText) {
 
     "QR BERHASIL TERBACA ✅\n\n" +
 
-    "Isi QR:\n" +
+    "Isi QR:\n\n" +
 
     decodedText +
 
     "\n\n" +
 
-    "Scanner QR bekerja dengan baik.\n" +
+    "Scanner QR bekerja dengan baik.\n\n" +
 
     "Belum ada proses check-in ke Google Sheets."
 
@@ -435,7 +439,6 @@ async function hentikanScannerInternal() {
     return;
   }
 
-
   try {
 
     await scanner.stop();
@@ -450,7 +453,6 @@ async function hentikanScannerInternal() {
     );
 
   }
-
 
   try {
 
@@ -467,21 +469,16 @@ async function hentikanScannerInternal() {
 
   }
 
-
   scanner = null;
-
   scannerAktif = false;
-
 
   document
     .getElementById("reader")
     .classList.add("hidden");
 
-
   document
     .getElementById("startButton")
     .classList.remove("hidden");
-
 
   document
     .getElementById("stopButton")
@@ -497,7 +494,6 @@ async function hentikanScannerInternal() {
 async function hentikanScanner() {
 
   await hentikanScannerInternal();
-
 
   tampilStatus(
 
