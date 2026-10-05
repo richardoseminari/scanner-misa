@@ -299,13 +299,6 @@ button {
     Iframe tersembunyi untuk memanggil Apps Script.
     Hasilnya dikirim kembali ke halaman ini melalui postMessage.
   -->
-  <iframe
-    id="checkinFrame"
-    title="Proses Check-In"
-    style="display:none;width:1px;height:1px;border:0"
-    aria-hidden="true"
-  ></iframe>
-
 </div>
 
 
@@ -505,47 +498,90 @@ async function onScanSuccess(
   const petugas = document.getElementById("petugas").value.trim();
 
   /*
-    Apps Script dibuka DI DALAM iframe tersembunyi.
-    Kamera tetap berada di halaman GitHub.
-    Halaman Apps Script mengirim hasil kembali melalui postMessage.
-    Tidak ada JSONP, fetch/CORS, tab baru, atau pindah halaman.
+    Apps Script dipanggil sebagai JSONP.
+    Tidak ada iframe, fetch/CORS, postMessage, atau pindah halaman.
   */
+
+  const callbackName = "misaCheckinCallback_" + Date.now();
+  const script = document.createElement("script");
 
   const url =
     API_URL +
     "?action=checkin" +
     "&id=" + encodeURIComponent(idRegistrasi) +
     "&petugas=" + encodeURIComponent(petugas) +
+    "&callback=" + encodeURIComponent(callbackName) +
     "&t=" + Date.now();
 
   console.log("MEMPROSES CHECK-IN:", url);
 
-  const frame = document.getElementById("checkinFrame");
-  frame.src = url;
-}
+  let selesai = false;
 
+  const timeoutId = setTimeout(function() {
+    if (selesai) return;
 
-/* =====================================================
-   HASIL DARI APPS SCRIPT
-===================================================== */
+    selesai = true;
+    cleanup();
 
-window.addEventListener("message", function(event) {
+    document.getElementById("loading").style.display = "none";
 
-  const data = event && event.data;
+    tampilHasil({
+      success: false,
+      alreadyCheckedIn: false,
+      message: "Server check-in tidak memberikan jawaban dalam 15 detik. Periksa koneksi internet lalu coba lagi."
+    });
 
-  if (!data || data.type !== "MISA_CHECKIN_RESULT") {
-    return;
+    sedangMemproses = false;
+  }, 15000);
+
+  function cleanup() {
+    clearTimeout(timeoutId);
+
+    try {
+      delete window[callbackName];
+    } catch (e) {}
+
+    if (script.parentNode) {
+      script.parentNode.removeChild(script);
+    }
   }
 
-  console.log("HASIL CHECK-IN:", data.result);
+  window[callbackName] = function(result) {
+    if (selesai) return;
 
-  document.getElementById("loading").style.display = "none";
-  document.getElementById("checkinFrame").src = "about:blank";
+    selesai = true;
+    cleanup();
 
-  tampilHasil(data.result || {});
+    console.log("HASIL CHECK-IN:", result);
 
-  sedangMemproses = false;
-});
+    document.getElementById("loading").style.display = "none";
+
+    tampilHasil(result || {});
+
+    sedangMemproses = false;
+  };
+
+  script.onerror = function() {
+    if (selesai) return;
+
+    selesai = true;
+    cleanup();
+
+    document.getElementById("loading").style.display = "none";
+
+    tampilHasil({
+      success: false,
+      alreadyCheckedIn: false,
+      message: "Tidak dapat terhubung ke server check-in. Periksa koneksi internet lalu coba lagi."
+    });
+
+    sedangMemproses = false;
+  };
+
+  script.src = url;
+  document.body.appendChild(script);
+
+}
 
 
 /* =====================================================
