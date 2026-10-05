@@ -1,22 +1,14 @@
 <!DOCTYPE html>
 <html lang="id">
-
 <head>
-
   <meta charset="UTF-8">
-
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0"
-  >
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <title>Scanner Check-In Misa</title>
 
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 
-
   <style>
-
     * {
       box-sizing: border-box;
     }
@@ -32,7 +24,7 @@
     .box {
       width: 100%;
       max-width: 520px;
-      margin: auto;
+      margin: 0 auto;
       background: white;
       padding: 20px;
       border-radius: 16px;
@@ -130,11 +122,8 @@
     .label {
       font-weight: bold;
     }
-
   </style>
-
 </head>
-
 
 <body>
 
@@ -142,11 +131,9 @@
 
   <h2>Scanner Check-In Misa</h2>
 
-
   <label for="petugas">
     Nama Petugas
   </label>
-
 
   <input
     id="petugas"
@@ -155,7 +142,6 @@
     autocomplete="off"
   >
 
-
   <button
     id="btnStart"
     type="button"
@@ -163,7 +149,6 @@
   >
     Mulai Scanner
   </button>
-
 
   <button
     id="btnStop"
@@ -174,9 +159,7 @@
     Hentikan Scanner
   </button>
 
-
   <div id="reader"></div>
-
 
   <div id="status">
     Scanner belum dimulai.
@@ -187,18 +170,17 @@
 
 <script>
 
-
-/* =====================================================
-   CONFIG
-===================================================== */
+/* =========================================================
+   KONFIGURASI
+========================================================= */
 
 const API =
   "https://script.google.com/macros/s/AKfycbz53X4twAvOSWR8b5LuZW_Ven6SeNaPasnYMdAXr9qX6nkgNwl_2UlNoL_bS0VWfyzFGw/exec";
 
 
-/* =====================================================
-   VARIABLE
-===================================================== */
+/* =========================================================
+   VARIABEL
+========================================================= */
 
 let scanner = null;
 
@@ -206,25 +188,16 @@ let scannerAktif = false;
 
 let sedangProses = false;
 
-
-/*
-  Window Bridge yang sudah dibuka
-  saat user menekan "Mulai Scanner".
-*/
-
-let bridgeWindow = null;
-
-
-/*
-  Timeout check-in.
-*/
+let bridgeFrame = null;
 
 let bridgeTimeout = null;
 
+let bridgeNonce = null;
 
-/* =====================================================
+
+/* =========================================================
    STATUS
-===================================================== */
+========================================================= */
 
 function setStatus(
   pesan,
@@ -232,9 +205,7 @@ function setStatus(
 ) {
 
   const el =
-    document.getElementById(
-      "status"
-    );
+    document.getElementById("status");
 
   el.className = "";
 
@@ -242,15 +213,14 @@ function setStatus(
     el.classList.add(tipe);
   }
 
-  el.innerHTML =
-    pesan;
+  el.innerHTML = pesan;
 
 }
 
 
-/* =====================================================
+/* =========================================================
    MULAI SCANNER
-===================================================== */
+========================================================= */
 
 async function mulaiScanner() {
 
@@ -261,9 +231,7 @@ async function mulaiScanner() {
 
   const petugas =
     document
-      .getElementById(
-        "petugas"
-      )
+      .getElementById("petugas")
       .value
       .trim();
 
@@ -279,61 +247,18 @@ async function mulaiScanner() {
   }
 
 
-  /*
-    =====================================================
-    PENTING
-    =====================================================
-
-    Window Bridge dibuka DI DALAM klik tombol.
-
-    Dengan begitu browser menganggapnya
-    sebagai popup yang diizinkan.
-
-    Nantinya window ini kita gunakan kembali
-    saat QR terbaca.
-  */
-
-  bridgeWindow =
-    window.open(
-      "about:blank",
-      "misaCheckinBridge",
-      "width=500,height=700"
-    );
-
-
-  if (!bridgeWindow) {
+  if (
+    !navigator.mediaDevices ||
+    !navigator.mediaDevices.getUserMedia
+  ) {
 
     setStatus(
-      "<b>Popup Bridge diblokir browser.</b><br>" +
-      "Izinkan pop-up untuk situs scanner ini.",
+      "<b>Browser tidak mendukung kamera.</b>",
       "error"
     );
 
     return;
   }
-
-
-  /*
-    Tampilkan halaman kosong sementara.
-  */
-
-  try {
-
-    bridgeWindow.document.open();
-
-    bridgeWindow.document.write(
-      "<html>" +
-      "<body style='font-family:Arial;text-align:center;padding:30px'>" +
-      "<h3>Scanner Check-In</h3>" +
-      "<p>Bridge siap.</p>" +
-      "</body>" +
-      "</html>"
-    );
-
-    bridgeWindow.document.close();
-
-  }
-  catch (e) {}
 
 
   setStatus(
@@ -344,69 +269,54 @@ async function mulaiScanner() {
 
   try {
 
-    /*
-      Permission kamera.
-    */
-
     const stream =
       await navigator.mediaDevices.getUserMedia({
-
         video: {
           facingMode: {
             ideal: "environment"
           }
         },
-
         audio: false
-
       });
 
 
     stream
       .getTracks()
-      .forEach(
-        function(track) {
-          track.stop();
-        }
-      );
+      .forEach(function(track) {
+        track.stop();
+      });
 
 
     scanner =
-      new Html5Qrcode(
-        "reader"
-      );
+      new Html5Qrcode("reader");
 
 
     await scanner.start(
 
       {
-        facingMode:
-          "environment"
+        facingMode: "environment"
       },
 
       {
-
         fps: 10,
 
-        qrbox:
-          function(
-            width,
-            height
-          ) {
+        qrbox: function(
+          width,
+          height
+        ) {
 
-            const ukuran =
-              Math.min(
-                width,
-                height
-              ) * 0.70;
+          const ukuran =
+            Math.min(
+              width,
+              height
+            ) * 0.70;
 
+          return {
+            width: ukuran,
+            height: ukuran
+          };
 
-            return {
-              width: ukuran,
-              height: ukuran
-            };
-
-          },
+        },
 
         aspectRatio: 1.0
 
@@ -416,33 +326,25 @@ async function mulaiScanner() {
 
       function(errorMessage) {
         /*
-          Abaikan error frame biasa.
+          Error pembacaan frame
+          tidak perlu ditampilkan.
         */
       }
 
     );
 
 
-    scannerAktif =
-      true;
+    scannerAktif = true;
 
 
     document
-      .getElementById(
-        "btnStart"
-      )
-      .classList.add(
-        "hidden"
-      );
+      .getElementById("btnStart")
+      .classList.add("hidden");
 
 
     document
-      .getElementById(
-        "btnStop"
-      )
-      .classList.remove(
-        "hidden"
-      );
+      .getElementById("btnStop")
+      .classList.remove("hidden");
 
 
     setStatus(
@@ -456,16 +358,9 @@ async function mulaiScanner() {
   catch (error) {
 
     console.error(
+      "CAMERA ERROR:",
       error
     );
-
-
-    /*
-      Kalau kamera gagal,
-      tutup Bridge.
-    */
-
-    tutupBridge();
 
 
     setStatus(
@@ -479,9 +374,9 @@ async function mulaiScanner() {
 }
 
 
-/* =====================================================
-   QR BERHASIL
-===================================================== */
+/* =========================================================
+   QR BERHASIL TERBACA
+========================================================= */
 
 function qrBerhasil(
   decodedText
@@ -505,9 +400,7 @@ function qrBerhasil(
 
   const petugas =
     document
-      .getElementById(
-        "petugas"
-      )
+      .getElementById("petugas")
       .value
       .trim();
 
@@ -523,8 +416,7 @@ function qrBerhasil(
   }
 
 
-  sedangProses =
-    true;
+  sedangProses = true;
 
 
   setStatus(
@@ -542,44 +434,31 @@ function qrBerhasil(
 }
 
 
-/* =====================================================
+/* =========================================================
    KIRIM KE BRIDGE
-===================================================== */
+========================================================= */
 
 function kirimKeBridge(
   idRegistrasi,
   petugas
 ) {
 
-  /*
-    Pastikan window Bridge masih hidup.
-  */
-
-  if (
-    !bridgeWindow ||
-    bridgeWindow.closed
-  ) {
-
-    sedangProses =
-      false;
+  bersihkanBridge();
 
 
-    setStatus(
-      "<b>Bridge tidak tersedia.</b><br>" +
-      "Tekan Hentikan Scanner lalu " +
-      "Mulai Scanner kembali.",
-      "error"
-    );
-
-    return;
-  }
+  bridgeNonce =
+    Date.now().toString() +
+    "_" +
+    Math.random()
+      .toString(36)
+      .substring(2);
 
 
-  /*
-    URL Bridge.
-  */
+  const targetOrigin =
+    window.location.origin;
 
-  const url =
+
+  const bridgeUrl =
     API +
     "?page=bridge" +
     "&id=" +
@@ -589,85 +468,80 @@ function kirimKeBridge(
     "&petugas=" +
     encodeURIComponent(
       petugas
+    ) +
+    "&target=" +
+    encodeURIComponent(
+      targetOrigin
+    ) +
+    "&nonce=" +
+    encodeURIComponent(
+      bridgeNonce
     );
 
 
   console.log(
     "BRIDGE URL:",
-    url
+    bridgeUrl
   );
 
 
-  /*
-    Kirim URL ke window yang sudah dibuka.
-  */
-
-  try {
-
-    bridgeWindow.location.href =
-      url;
-
-    bridgeWindow.focus();
-
-  }
-
-  catch (error) {
-
-    console.error(
-      error
-    );
+  bridgeFrame =
+    document.createElement("iframe");
 
 
-    sedangProses =
-      false;
+  bridgeFrame.style.position =
+    "fixed";
+
+  bridgeFrame.style.left =
+    "-10000px";
+
+  bridgeFrame.style.top =
+    "-10000px";
+
+  bridgeFrame.style.width =
+    "1px";
+
+  bridgeFrame.style.height =
+    "1px";
+
+  bridgeFrame.style.border =
+    "0";
+
+  bridgeFrame.style.opacity =
+    "0";
+
+  bridgeFrame.style.pointerEvents =
+    "none";
 
 
-    setStatus(
-      "<b>Bridge gagal dibuka.</b>",
-      "error"
-    );
-
-    return;
-
-  }
+  bridgeFrame.src =
+    bridgeUrl;
 
 
-  /*
-    Timeout.
-  */
-
-  if (bridgeTimeout) {
-
-    clearTimeout(
-      bridgeTimeout
-    );
-
-  }
+  document.body.appendChild(
+    bridgeFrame
+  );
 
 
   bridgeTimeout =
     setTimeout(
       function() {
 
-        if (bridgeTimeout) {
-
-          clearTimeout(
-            bridgeTimeout
-          );
-
-          bridgeTimeout =
-            null;
-
-        }
+        console.error(
+          "BRIDGE TIMEOUT"
+        );
 
 
-        sedangProses =
-          false;
+        bersihkanBridge();
+
+
+        sedangProses = false;
 
 
         setStatus(
           "<b>SERVER TIDAK MERESPONS</b><br>" +
-          "Tidak menerima jawaban dari server Check-In.",
+          "Tidak menerima jawaban dari server Check-In.<br>" +
+          "Coba scan kembali.",
           "error"
         );
 
@@ -678,9 +552,9 @@ function kirimKeBridge(
 }
 
 
-/* =====================================================
-   TERIMA HASIL DARI BRIDGE
-===================================================== */
+/* =========================================================
+   TERIMA POSTMESSAGE DARI BRIDGE
+========================================================= */
 
 function terimaPesan(
   event
@@ -688,7 +562,7 @@ function terimaPesan(
 
   console.log(
     "MESSAGE DITERIMA:",
-    event.data
+    event
   );
 
 
@@ -710,12 +584,37 @@ function terimaPesan(
   }
 
 
-  /*
-    Kita tidak menggunakan nonce.
-    Kita tidak menggunakan iframe.
-    Kita cukup menerima hasil dari
-    window Bridge yang kita buka.
-  */
+  if (
+    !bridgeNonce ||
+    data.nonce !== bridgeNonce
+  ) {
+
+    console.warn(
+      "Nonce tidak cocok."
+    );
+
+    return;
+  }
+
+
+  if (
+    !bridgeFrame ||
+    event.source !==
+      bridgeFrame.contentWindow
+  ) {
+
+    console.warn(
+      "Pesan bukan dari Bridge."
+    );
+
+    return;
+  }
+
+
+  console.log(
+    "HASIL CHECK-IN:",
+    data.data
+  );
 
 
   if (bridgeTimeout) {
@@ -724,10 +623,12 @@ function terimaPesan(
       bridgeTimeout
     );
 
-    bridgeTimeout =
-      null;
+    bridgeTimeout = null;
 
   }
+
+
+  bersihkanBridge();
 
 
   tampilkanHasil(
@@ -737,9 +638,9 @@ function terimaPesan(
 }
 
 
-/* =====================================================
-   HASIL CHECK-IN
-===================================================== */
+/* =========================================================
+   TAMPILKAN HASIL
+========================================================= */
 
 function tampilkanHasil(
   hasil
@@ -752,27 +653,19 @@ function tampilkanHasil(
       "error"
     );
 
-    sedangProses =
-      false;
+    sedangProses = false;
 
     return;
   }
 
 
-  console.log(
-    "HASIL CHECK-IN:",
-    hasil
-  );
-
-
-  /*
-    BERHASIL
-  */
-
   if (hasil.success) {
 
     let html =
-      "<b>CHECK-IN BERHASIL</b>" +
+      "<b>CHECK-IN BERHASIL</b>";
+
+
+    html +=
       "<div class='ticket'>";
 
 
@@ -871,16 +764,15 @@ function tampilkanHasil(
   }
 
 
-  /*
-    SUDAH CHECK-IN
-  */
-
   else if (
     hasil.alreadyCheckedIn
   ) {
 
     let html =
-      "<b>TIKET SUDAH CHECK-IN</b>" +
+      "<b>TIKET SUDAH CHECK-IN</b>";
+
+
+    html +=
       "<div class='ticket'>";
 
 
@@ -948,10 +840,6 @@ function tampilkanHasil(
   }
 
 
-  /*
-    DITOLAK
-  */
-
   else {
 
     setStatus(
@@ -966,15 +854,10 @@ function tampilkanHasil(
   }
 
 
-  /*
-    Siapkan scanner untuk QR berikutnya.
-  */
-
   setTimeout(
     function() {
 
-      sedangProses =
-        false;
+      sedangProses = false;
 
     },
     1500
@@ -983,11 +866,11 @@ function tampilkanHasil(
 }
 
 
-/* =====================================================
-   TUTUP BRIDGE
-===================================================== */
+/* =========================================================
+   BERSIHKAN BRIDGE
+========================================================= */
 
-function tutupBridge() {
+function bersihkanBridge() {
 
   if (bridgeTimeout) {
 
@@ -995,36 +878,33 @@ function tutupBridge() {
       bridgeTimeout
     );
 
-    bridgeTimeout =
-      null;
+    bridgeTimeout = null;
 
   }
 
 
-  if (
-    bridgeWindow &&
-    !bridgeWindow.closed
-  ) {
+  if (bridgeFrame) {
 
     try {
-
-      bridgeWindow.close();
-
+      bridgeFrame.remove();
     }
-    catch (error) {}
+    catch (error) {
+      console.error(error);
+    }
+
+    bridgeFrame = null;
 
   }
 
 
-  bridgeWindow =
-    null;
+  bridgeNonce = null;
 
 }
 
 
-/* =====================================================
+/* =========================================================
    STOP SCANNER
-===================================================== */
+========================================================= */
 
 async function stopScanner() {
 
@@ -1045,41 +925,31 @@ async function stopScanner() {
   catch (error) {
 
     console.error(
+      "STOP ERROR:",
       error
     );
 
   }
 
 
-  scanner =
-    null;
+  scanner = null;
 
-  scannerAktif =
-    false;
+  scannerAktif = false;
 
-  sedangProses =
-    false;
+  sedangProses = false;
 
 
-  tutupBridge();
+  bersihkanBridge();
 
 
   document
-    .getElementById(
-      "btnStart"
-    )
-    .classList.remove(
-      "hidden"
-    );
+    .getElementById("btnStart")
+    .classList.remove("hidden");
 
 
   document
-    .getElementById(
-      "btnStop"
-    )
-    .classList.add(
-      "hidden"
-    );
+    .getElementById("btnStop")
+    .classList.add("hidden");
 
 
   setStatus(
@@ -1090,9 +960,9 @@ async function stopScanner() {
 }
 
 
-/* =====================================================
+/* =========================================================
    ESCAPE HTML
-===================================================== */
+========================================================= */
 
 function escapeHtml(
   value
@@ -1125,9 +995,9 @@ function escapeHtml(
 }
 
 
-/* =====================================================
+/* =========================================================
    LISTENER
-===================================================== */
+========================================================= */
 
 window.addEventListener(
   "message",
@@ -1136,15 +1006,15 @@ window.addEventListener(
 );
 
 
-/* =====================================================
-   SEBELUM HALAMAN DITUTUP
-===================================================== */
+/* =========================================================
+   BERSIHKAN SAAT HALAMAN DITUTUP
+========================================================= */
 
 window.addEventListener(
   "beforeunload",
   function() {
 
-    tutupBridge();
+    bersihkanBridge();
 
   }
 );
@@ -1152,5 +1022,4 @@ window.addEventListener(
 </script>
 
 </body>
-
 </html>
