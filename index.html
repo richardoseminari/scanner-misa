@@ -87,11 +87,6 @@ button {
   color: white;
 }
 
-.btn-secondary {
-  background: #e9eef5;
-  color: #17365d;
-}
-
 .btn-danger {
   background: #c62828;
   color: white;
@@ -210,18 +205,19 @@ button {
 
     <button
       type="button"
-      class="btn-secondary"
-      onclick="gantiPetugas()"
-    >
-      Ganti Petugas
-    </button>
-
-    <button
-      type="button"
       class="btn-primary"
       onclick="mulaiScanner()"
     >
       📷 Mulai Scanner
+    </button>
+
+    <button
+      type="button"
+      class="btn-danger"
+      onclick="gantiPetugas()"
+      style="margin-top:10px"
+    >
+      Ganti Petugas
     </button>
 
     <div
@@ -299,6 +295,17 @@ button {
 
   </div>
 
+  <!--
+    Iframe tersembunyi untuk memanggil Apps Script.
+    Hasilnya dikirim kembali ke halaman ini melalui postMessage.
+  -->
+  <iframe
+    id="checkinFrame"
+    title="Proses Check-In"
+    style="display:none;width:1px;height:1px;border:0"
+    aria-hidden="true"
+  ></iframe>
+
 </div>
 
 
@@ -324,41 +331,6 @@ let sedangMemproses = false;
    MULAI SCANNER
 ===================================================== */
 
-function ambilPetugasTersimpan() {
-  try {
-    return (
-      sessionStorage.getItem("MISA_PETUGAS") || ""
-    ).trim();
-  } catch (e) {
-    return "";
-  }
-}
-
-function simpanPetugas(nama) {
-  try {
-    sessionStorage.setItem(
-      "MISA_PETUGAS",
-      String(nama || "").trim()
-    );
-  } catch (e) {}
-}
-
-function gantiPetugas() {
-  try {
-    sessionStorage.removeItem("MISA_PETUGAS");
-  } catch (e) {}
-
-  document.getElementById("petugas").value = "";
-
-  tampilStatus(
-    "statusAwal",
-    "Masukkan nama petugas yang baru.",
-    "info"
-  );
-
-  document.getElementById("petugas").focus();
-}
-
 async function mulaiScanner() {
 
   const petugas =
@@ -379,23 +351,17 @@ async function mulaiScanner() {
     return;
   }
 
-  simpanPetugas(petugas);
+  sessionStorage.setItem("MISA_PETUGAS", petugas);
 
 
   try {
 
     tampilStatus(
       "statusAwal",
-      "Membuka kamera...",
+      "Memeriksa kamera...",
       "info"
     );
 
-
-    /*
-      Html5Qrcode membuka kamera satu kali.
-      Tidak ada getUserMedia() terpisah di sini,
-      supaya kamera tidak dibuka lalu ditutup sebelum scanner mulai.
-    */
 
     document
       .getElementById("petugasCard")
@@ -491,7 +457,7 @@ async function mulaiScanner() {
 
     tampilStatus(
       "statusAwal",
-      "Kamera belum terbuka. Tekan Mulai Scanner untuk mencoba lagi. " +
+      "Kamera tidak dapat digunakan: " +
       (
         error &&
         error.message
@@ -521,85 +487,65 @@ async function onScanSuccess(
   sedangMemproses = true;
 
   const idRegistrasi =
-    String(
-      decodedText || ""
-    ).trim();
+    String(decodedText || "").trim();
 
-  console.log(
-    "QR TERBACA:",
-    idRegistrasi
-  );
+  console.log("QR TERBACA:", idRegistrasi);
 
-  const debug =
-    document.getElementById(
-      "qrDebug"
-    );
-
-  debug.style.display =
-    "block";
-
+  const debug = document.getElementById("qrDebug");
+  debug.style.display = "block";
   debug.innerHTML =
-    "<b>QR TERBACA:</b><br>" +
-    escapeHTML(
-      idRegistrasi
-    );
-
-  /*
-    Setelah QR terbaca, kamera dihentikan.
-    Kemudian halaman scanner ini langsung
-    diarahkan ke halaman hasil Apps Script.
-
-    Tidak menggunakan:
-    - JSONP
-    - postMessage
-    - window.opener
-    - tab baru
-  */
+    "<b>QR TERBACA:</b><br>" + escapeHTML(idRegistrasi);
 
   await stopScanner();
 
-  document
-    .getElementById("loading")
-    .style
-    .display = "block";
+  document.getElementById("scannerCard").classList.add("hidden");
+  document.getElementById("resultCard").style.display = "none";
+  document.getElementById("loading").style.display = "block";
 
-  const petugas =
-    document
-      .getElementById("petugas")
-      .value
-      .trim();
+  const petugas = document.getElementById("petugas").value.trim();
+
+  /*
+    Apps Script dibuka DI DALAM iframe tersembunyi.
+    Kamera tetap berada di halaman GitHub.
+    Halaman Apps Script mengirim hasil kembali melalui postMessage.
+    Tidak ada JSONP, fetch/CORS, tab baru, atau pindah halaman.
+  */
 
   const url =
     API_URL +
     "?action=checkin" +
-    "&id=" +
-    encodeURIComponent(
-      idRegistrasi
-    ) +
-    "&petugas=" +
-    encodeURIComponent(
-      petugas
-    ) +
-    "&t=" +
-    Date.now();
+    "&id=" + encodeURIComponent(idRegistrasi) +
+    "&petugas=" + encodeURIComponent(petugas) +
+    "&t=" + Date.now();
 
-  console.log(
-    "MEMBUKA HASIL CHECK-IN:",
-    url
-  );
+  console.log("MEMPROSES CHECK-IN:", url);
 
-  /*
-    Tunggu sebentar agar kamera benar-benar
-    berhenti sebelum pindah halaman.
-  */
-
-  setTimeout(
-    function() {
-      window.location.href = url;
-    },
-    250
-  );
+  const frame = document.getElementById("checkinFrame");
+  frame.src = url;
 }
+
+
+/* =====================================================
+   HASIL DARI APPS SCRIPT
+===================================================== */
+
+window.addEventListener("message", function(event) {
+
+  const data = event && event.data;
+
+  if (!data || data.type !== "MISA_CHECKIN_RESULT") {
+    return;
+  }
+
+  console.log("HASIL CHECK-IN:", data.result);
+
+  document.getElementById("loading").style.display = "none";
+  document.getElementById("checkinFrame").src = "about:blank";
+
+  tampilHasil(data.result || {});
+
+  sedangMemproses = false;
+});
 
 
 /* =====================================================
@@ -848,19 +794,35 @@ function tambahData(
    SCAN BERIKUTNYA
 ===================================================== */
 
-function scanBerikutnya() {
+async function scanBerikutnya() {
+
+  document.getElementById("resultCard").style.display = "none";
+  document.getElementById("loading").style.display = "none";
+  document.getElementById("scannerCard").classList.remove("hidden");
+
+  const debug = document.getElementById("qrDebug");
+  debug.style.display = "none";
+  debug.innerHTML = "";
+
+  sedangMemproses = false;
 
   /*
-    Jangan mencoba membuka kamera dari halaman hasil.
-    Kembali sepenuhnya ke halaman awal scanner.
-
-    Parameter ?scan=1 hanya sebagai penanda bahwa
-    halaman dibuka untuk melakukan scan berikutnya.
+    Ini dijalankan langsung dari klik tombol petugas.
+    Karena masih pada halaman yang sama, browser mengizinkan
+    kamera dibuka kembali tanpa navigasi halaman.
   */
+  await mulaiScanner();
+}
 
-  window.location.href =
-    "https://richardoseminari.github.io/scanner-misa/?scan=1&t=" +
-    Date.now();
+
+/* =====================================================
+   GANTI PETUGAS
+===================================================== */
+
+function gantiPetugas() {
+  sessionStorage.removeItem("MISA_PETUGAS");
+  document.getElementById("petugas").value = "";
+  tampilStatus("statusAwal", "Silakan masukkan nama petugas baru.", "info");
 }
 
 
@@ -953,69 +915,37 @@ function escapeHTML(
    LOAD
 ===================================================== */
 
-window.addEventListener(
-  "load",
-  function() {
+window.addEventListener("load", function() {
 
-    const tersimpan =
-      ambilPetugasTersimpan();
+  const tersimpan = sessionStorage.getItem("MISA_PETUGAS") || "";
+  const input = document.getElementById("petugas");
 
-    const params =
-      new URLSearchParams(
-        window.location.search
-      );
-
-    const scanBerikutnya =
-      params.get("scan") === "1";
-
-    if (tersimpan) {
-
-      document.getElementById("petugas").value =
-        tersimpan;
-
-      if (scanBerikutnya) {
-
-        tampilStatus(
-          "statusAwal",
-          "Petugas tersimpan. Membuka kamera...",
-          "info"
-        );
-
-        /*
-          Dipanggil otomatis setelah kembali dari
-          halaman hasil check-in.
-        */
-        setTimeout(
-          function() {
-            mulaiScanner();
-          },
-          400
-        );
-
-      } else {
-
-        tampilStatus(
-          "statusAwal",
-          "Petugas tersimpan: " +
-          tersimpan +
-          ". Tekan Mulai Scanner.",
-          "info"
-        );
-
-      }
-
-    } else {
-
-      tampilStatus(
-        "statusAwal",
-        "Masukkan nama petugas lalu mulai scanner.",
-        "info"
-      );
-
-    }
-
+  if (tersimpan) {
+    input.value = tersimpan;
+    tampilStatus(
+      "statusAwal",
+      "Nama petugas tersimpan. Tekan Mulai Scanner.",
+      "success"
+    );
+  } else {
+    tampilStatus(
+      "statusAwal",
+      "Kamera siap. Masukkan nama petugas lalu mulai scanner.",
+      "info"
+    );
   }
-);
+
+});
+
+
+/* Simpan nama petugas saat scanner dimulai. */
+const petugasInput = document.getElementById("petugas");
+petugasInput.addEventListener("change", function() {
+  const nama = this.value.trim();
+  if (nama) {
+    sessionStorage.setItem("MISA_PETUGAS", nama);
+  }
+});
 
 </script>
 
