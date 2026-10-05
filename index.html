@@ -1,14 +1,21 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
+
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
 
   <title>Scanner Check-In Misa</title>
 
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 
   <style>
+
     * {
       box-sizing: border-box;
     }
@@ -24,7 +31,7 @@
     .box {
       width: 100%;
       max-width: 520px;
-      margin: 0 auto;
+      margin: auto;
       background: white;
       padding: 20px;
       border-radius: 16px;
@@ -33,7 +40,7 @@
 
     h2 {
       text-align: center;
-      margin: 0 0 20px;
+      margin-top: 0;
     }
 
     label {
@@ -58,7 +65,6 @@
       border-radius: 10px;
       font-size: 16px;
       font-weight: bold;
-      cursor: pointer;
       margin-top: 8px;
       background: #2563eb;
       color: white;
@@ -111,7 +117,7 @@
     .ticket {
       margin-top: 12px;
       padding: 14px;
-      background: rgba(255,255,255,.65);
+      background: rgba(255,255,255,.7);
       border-radius: 10px;
       text-align: left;
     }
@@ -123,8 +129,11 @@
     .label {
       font-weight: bold;
     }
+
   </style>
+
 </head>
+
 
 <body>
 
@@ -132,7 +141,11 @@
 
   <h2>Scanner Check-In Misa</h2>
 
-  <label for="petugas">Nama Petugas</label>
+
+  <label for="petugas">
+    Nama Petugas
+  </label>
+
 
   <input
     id="petugas"
@@ -141,6 +154,7 @@
     autocomplete="off"
   >
 
+
   <button
     id="btnStart"
     type="button"
@@ -148,6 +162,7 @@
   >
     Mulai Scanner
   </button>
+
 
   <button
     id="btnStop"
@@ -158,7 +173,9 @@
     Hentikan Scanner
   </button>
 
+
   <div id="reader"></div>
+
 
   <div id="status">
     Scanner belum dimulai.
@@ -169,17 +186,18 @@
 
 <script>
 
-/* =========================================================
+
+/* =====================================================
    KONFIGURASI
-========================================================= */
+===================================================== */
 
 const API =
   "https://script.google.com/macros/s/AKfycbz53X4twAvOSWR8b5LuZW_Ven6SeNaPasnYMdAXr9qX6nkgNwl_2UlNoL_bS0VWfyzFGw/exec";
 
 
-/* =========================================================
+/* =====================================================
    VARIABEL
-========================================================= */
+===================================================== */
 
 let scanner = null;
 
@@ -191,12 +209,10 @@ let bridgeFrame = null;
 
 let bridgeTimeout = null;
 
-let bridgeNonce = null;
 
-
-/* =========================================================
+/* =====================================================
    STATUS
-========================================================= */
+===================================================== */
 
 function setStatus(
   pesan,
@@ -213,12 +229,13 @@ function setStatus(
   }
 
   el.innerHTML = pesan;
+
 }
 
 
-/* =========================================================
+/* =====================================================
    MULAI SCANNER
-========================================================= */
+===================================================== */
 
 async function mulaiScanner() {
 
@@ -245,20 +262,6 @@ async function mulaiScanner() {
   }
 
 
-  if (
-    !navigator.mediaDevices ||
-    !navigator.mediaDevices.getUserMedia
-  ) {
-
-    setStatus(
-      "<b>Browser tidak mendukung kamera.</b>",
-      "error"
-    );
-
-    return;
-  }
-
-
   setStatus(
     "Meminta izin kamera...",
     "info"
@@ -267,30 +270,26 @@ async function mulaiScanner() {
 
   try {
 
-    /*
-      Minta permission kamera.
-    */
-
     const stream =
       await navigator.mediaDevices.getUserMedia({
+
         video: {
           facingMode: {
             ideal: "environment"
           }
         },
+
         audio: false
+
       });
 
-
-    /*
-      Matikan stream permission.
-      html5-qrcode akan membuka kamera sendiri.
-    */
 
     stream
       .getTracks()
       .forEach(function(track) {
+
         track.stop();
+
       });
 
 
@@ -305,6 +304,7 @@ async function mulaiScanner() {
       },
 
       {
+
         fps: 10,
 
         qrbox: function(
@@ -331,12 +331,7 @@ async function mulaiScanner() {
 
       qrBerhasil,
 
-      function(errorMessage) {
-        /*
-          Error pembacaan frame
-          tidak perlu ditampilkan.
-        */
-      }
+      function(errorMessage) {}
 
     );
 
@@ -381,9 +376,9 @@ async function mulaiScanner() {
 }
 
 
-/* =========================================================
-   QR BERHASIL TERBACA
-========================================================= */
+/* =====================================================
+   QR BERHASIL
+===================================================== */
 
 function qrBerhasil(
   decodedText
@@ -441,46 +436,17 @@ function qrBerhasil(
 }
 
 
-/* =========================================================
-   KIRIM KE BRIDGE
-========================================================= */
+/* =====================================================
+   BRIDGE
+===================================================== */
 
 function kirimKeBridge(
   idRegistrasi,
   petugas
 ) {
 
-  /*
-    Bersihkan bridge lama.
-  */
-
   bersihkanBridge();
 
-
-  /*
-    Buat nonce unik.
-  */
-
-  bridgeNonce =
-    Date.now().toString() +
-    "_" +
-    Math.random()
-      .toString(36)
-      .substring(2);
-
-
-  /*
-    Target harus merupakan origin
-    halaman GitHub Pages ini.
-  */
-
-  const targetOrigin =
-    window.location.origin;
-
-
-  /*
-    Buat URL Bridge.
-  */
 
   const bridgeUrl =
     API +
@@ -492,26 +458,14 @@ function kirimKeBridge(
     "&petugas=" +
     encodeURIComponent(
       petugas
-    ) +
-    "&target=" +
-    encodeURIComponent(
-      targetOrigin
-    ) +
-    "&nonce=" +
-    encodeURIComponent(
-      bridgeNonce
     );
 
 
   console.log(
-    "BRIDGE URL:",
+    "MENGIRIM KE BRIDGE:",
     bridgeUrl
   );
 
-
-  /*
-    Buat iframe.
-  */
 
   bridgeFrame =
     document.createElement(
@@ -550,10 +504,6 @@ function kirimKeBridge(
   );
 
 
-  /*
-    Timeout 20 detik.
-  */
-
   bridgeTimeout =
     setTimeout(
       function() {
@@ -583,27 +533,23 @@ function kirimKeBridge(
 }
 
 
-/* =========================================================
-   TERIMA POSTMESSAGE DARI BRIDGE
-========================================================= */
+/* =====================================================
+   TERIMA HASIL BRIDGE
+===================================================== */
 
 function terimaPesan(
   event
 ) {
 
   console.log(
-    "MESSAGE DITERIMA:",
-    event
+    "PESAN DARI BRIDGE:",
+    event.data
   );
 
 
   const data =
     event.data;
 
-
-  /*
-    Pastikan format pesan benar.
-  */
 
   if (!data) {
     return;
@@ -620,50 +566,12 @@ function terimaPesan(
 
 
   /*
-    Pastikan nonce sama.
+    Tidak lagi memeriksa nonce.
+    Tidak lagi memeriksa event.source.
+    Bridge adalah satu-satunya iframe
+    yang kita buat.
   */
 
-  if (
-    !bridgeNonce ||
-    data.nonce !== bridgeNonce
-  ) {
-
-    console.warn(
-      "Nonce tidak cocok."
-    );
-
-    return;
-  }
-
-
-  /*
-    Pastikan pesan berasal dari
-    iframe Bridge yang sedang digunakan.
-  */
-
-  if (
-    !bridgeFrame ||
-    event.source !==
-      bridgeFrame.contentWindow
-  ) {
-
-    console.warn(
-      "Pesan bukan dari Bridge."
-    );
-
-    return;
-  }
-
-
-  console.log(
-    "HASIL CHECK-IN:",
-    data.data
-  );
-
-
-  /*
-    Hentikan timeout.
-  */
 
   if (bridgeTimeout) {
 
@@ -676,33 +584,25 @@ function terimaPesan(
   }
 
 
-  /*
-    Bersihkan iframe.
-  */
-
   bersihkanBridge();
 
 
-  /*
-    Tampilkan hasil.
-  */
-
-  tampilkanHasil(
+  mostrarResultado(
     data.data
   );
 
 }
 
 
-/* =========================================================
-   TAMPILKAN HASIL
-========================================================= */
+/* =====================================================
+   HASIL
+===================================================== */
 
-function tampilkanHasil(
-  hasil
+function mostrarResultado(
+  resultado
 ) {
 
-  if (!hasil) {
+  if (!resultado) {
 
     setStatus(
       "<b>RESPON SERVER KOSONG.</b>",
@@ -715,66 +615,69 @@ function tampilkanHasil(
   }
 
 
+  console.log(
+    "HASIL CHECK-IN:",
+    resultado
+  );
+
+
   /*
-    CHECK-IN BERHASIL
+    BERHASIL
   */
 
-  if (hasil.success) {
+  if (resultado.success) {
 
     let html =
-      "<b>CHECK-IN BERHASIL</b>";
-
-
-    html +=
+      "<b>CHECK-IN BERHASIL</b>" +
       "<div class='ticket'>";
 
 
-    if (hasil.nama) {
+    if (resultado.nama) {
 
       html +=
         "<div class='row'>" +
         "<span class='label'>Nama:</span> " +
         escapeHtml(
-          hasil.nama
+          resultado.nama
         ) +
         "</div>";
 
     }
 
 
-    if (hasil.namaMisa) {
+    if (resultado.namaMisa) {
 
       html +=
         "<div class='row'>" +
         "<span class='label'>Misa:</span> " +
         escapeHtml(
-          hasil.namaMisa
+          resultado.namaMisa
         ) +
         "</div>";
 
     }
 
 
-    if (hasil.tanggal) {
+    if (resultado.tanggal) {
 
       html +=
         "<div class='row'>" +
         "<span class='label'>Tanggal:</span> " +
         escapeHtml(
-          hasil.tanggal
+          resultado.tanggal
         ) +
         "</div>";
 
     }
 
 
-    if (hasil.jam) {
+    if (resultado.jam) {
 
       html +=
         "<div class='row'>" +
         "<span class='label'>Jam:</span> " +
         escapeHtml(
-          hasil.jam
+          resultado.jam
         ) +
         "</div>";
 
@@ -782,7 +685,7 @@ function tampilkanHasil(
 
 
     if (
-      hasil.jumlah !==
+      resultado.jumlah !==
       undefined
     ) {
 
@@ -791,7 +694,7 @@ function tampilkanHasil(
         "<span class='label'>Jumlah:</span> " +
         escapeHtml(
           String(
-            hasil.jumlah
+            resultado.jumlah
           )
         ) +
         "</div>";
@@ -799,13 +702,13 @@ function tampilkanHasil(
     }
 
 
-    if (hasil.waktuCheckIn) {
+    if (resultado.waktuCheckIn) {
 
       html +=
         "<div class='row'>" +
         "<span class='label'>Waktu:</span> " +
         escapeHtml(
-          hasil.waktuCheckIn
+          resultado.waktuCheckIn
         ) +
         "</div>";
 
@@ -829,63 +732,60 @@ function tampilkanHasil(
   */
 
   else if (
-    hasil.alreadyCheckedIn
+    resultado.alreadyCheckedIn
   ) {
 
     let html =
-      "<b>TIKET SUDAH CHECK-IN</b>";
-
-
-    html +=
+      "<b>TIKET SUDAH CHECK-IN</b>" +
       "<div class='ticket'>";
 
 
-    if (hasil.nama) {
+    if (resultado.nama) {
 
       html +=
         "<div class='row'>" +
         "<span class='label'>Nama:</span> " +
         escapeHtml(
-          hasil.nama
+          resultado.nama
         ) +
         "</div>";
 
     }
 
 
-    if (hasil.namaMisa) {
+    if (resultado.namaMisa) {
 
       html +=
         "<div class='row'>" +
         "<span class='label'>Misa:</span> " +
         escapeHtml(
-          hasil.namaMisa
+          resultado.namaMisa
         ) +
         "</div>";
 
     }
 
 
-    if (hasil.waktuCheckIn) {
+    if (resultado.waktuCheckIn) {
 
       html +=
         "<div class='row'>" +
         "<span class='label'>Check-In:</span> " +
         escapeHtml(
-          hasil.waktuCheckIn
+          resultado.waktuCheckIn
         ) +
         "</div>";
 
     }
 
 
-    if (hasil.petugasSebelumnya) {
+    if (resultado.petugasSebelumnya) {
 
       html +=
         "<div class='row'>" +
         "<span class='label'>Petugas:</span> " +
         escapeHtml(
-          hasil.petugasSebelumnya
+          resultado.petugasSebelumnya
         ) +
         "</div>";
 
@@ -905,7 +805,7 @@ function tampilkanHasil(
 
 
   /*
-    GAGAL
+    DITOLAK
   */
 
   else {
@@ -913,7 +813,7 @@ function tampilkanHasil(
     setStatus(
       "<b>CHECK-IN DITOLAK</b><br><br>" +
       escapeHtml(
-        hasil.message ||
+        resultado.message ||
         "Tiket tidak dapat diproses."
       ),
       "error"
@@ -921,10 +821,6 @@ function tampilkanHasil(
 
   }
 
-
-  /*
-    Izinkan scan berikutnya.
-  */
 
   setTimeout(
     function() {
@@ -938,9 +834,9 @@ function tampilkanHasil(
 }
 
 
-/* =========================================================
+/* =====================================================
    BERSIHKAN BRIDGE
-========================================================= */
+===================================================== */
 
 function bersihkanBridge() {
 
@@ -974,15 +870,12 @@ function bersihkanBridge() {
 
   }
 
-
-  bridgeNonce = null;
-
 }
 
 
-/* =========================================================
-   STOP SCANNER
-========================================================= */
+/* =====================================================
+   STOP
+===================================================== */
 
 async function stopScanner() {
 
@@ -1038,9 +931,9 @@ async function stopScanner() {
 }
 
 
-/* =========================================================
+/* =====================================================
    ESCAPE HTML
-========================================================= */
+===================================================== */
 
 function escapeHtml(
   value
@@ -1073,9 +966,9 @@ function escapeHtml(
 }
 
 
-/* =========================================================
-   PASANG LISTENER
-========================================================= */
+/* =====================================================
+   LISTENER
+===================================================== */
 
 window.addEventListener(
   "message",
@@ -1084,9 +977,9 @@ window.addEventListener(
 );
 
 
-/* =========================================================
-   BERSIHKAN SAAT HALAMAN DITUTUP
-========================================================= */
+/* =====================================================
+   SAAT HALAMAN DITUTUP
+===================================================== */
 
 window.addEventListener(
   "beforeunload",
