@@ -1,14 +1,10 @@
 <!DOCTYPE html>
 <html lang="id">
-
 <head>
-
 <meta charset="UTF-8">
 
-<meta
-  name="viewport"
-  content="width=device-width, initial-scale=1, maximum-scale=1"
->
+<meta name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1">
 
 <title>Check-In Misa</title>
 
@@ -65,7 +61,6 @@ label {
   display: block;
   font-weight: bold;
   margin-bottom: 8px;
-  font-size: 14px;
 }
 
 input {
@@ -74,11 +69,6 @@ input {
   border: 1px solid #d0d7de;
   border-radius: 12px;
   font-size: 16px;
-  outline: none;
-}
-
-input:focus {
-  border-color: #17365d;
 }
 
 button {
@@ -97,14 +87,17 @@ button {
   color: white;
 }
 
-.btn-secondary {
-  background: #e9eef5;
-  color: #17365d;
-}
-
 .btn-danger {
   background: #c62828;
   color: white;
+}
+
+#reader {
+  width: 100%;
+  margin-top: 15px;
+  overflow: hidden;
+  border-radius: 15px;
+  background: #111;
 }
 
 .status {
@@ -114,6 +107,7 @@ button {
   font-size: 14px;
   line-height: 1.5;
   display: none;
+  word-break: break-word;
 }
 
 .status.info {
@@ -140,34 +134,31 @@ button {
   color: #8d6e00;
 }
 
+.result {
+  display: none;
+}
+
+.result h2 {
+  margin-top: 0;
+}
+
+.data-row {
+  padding: 9px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.label-small {
+  color: #777;
+  font-size: 12px;
+}
+
+.value {
+  font-weight: bold;
+  margin-top: 3px;
+}
+
 .hidden {
   display: none !important;
-}
-
-#reader {
-  width: 100%;
-  margin-top: 15px;
-  overflow: hidden;
-  border-radius: 15px;
-  background: #111;
-}
-
-.petugas-info {
-  background: #eef3f8;
-  padding: 12px;
-  border-radius: 12px;
-  margin-bottom: 15px;
-}
-
-.petugas-info small {
-  display: block;
-  color: #777;
-  margin-bottom: 4px;
-}
-
-.petugas-info strong {
-  color: #17365d;
-  font-size: 16px;
 }
 
 .loading {
@@ -177,34 +168,29 @@ button {
   font-weight: bold;
 }
 
+.qr-debug {
+  margin-top: 10px;
+  padding: 10px;
+  background: #f1f3f4;
+  border-radius: 10px;
+  font-size: 12px;
+  word-break: break-all;
+}
+
 </style>
-
 </head>
-
 
 <body>
 
-
 <div class="container">
 
-
-  <!-- HEADER -->
-
   <div class="header">
-
     <h1>📷 Check-In Misa</h1>
-
     <p>Scan QR Code tiket umat</p>
-
   </div>
 
 
-  <!-- PETUGAS -->
-
-  <div
-    class="card"
-    id="petugasCard"
-  >
+  <div class="card" id="petugasCard">
 
     <label for="petugas">
       Nama Petugas
@@ -225,14 +211,6 @@ button {
       📷 Mulai Scanner
     </button>
 
-    <button
-      type="button"
-      class="btn-secondary"
-      onclick="hapusPetugas()"
-    >
-      Ganti Petugas
-    </button>
-
     <div
       id="statusAwal"
       class="status"
@@ -241,44 +219,34 @@ button {
   </div>
 
 
-  <!-- SCANNER -->
-
   <div
     class="card hidden"
     id="scannerCard"
   >
 
-    <div class="petugas-info">
-
-      <small>Petugas aktif</small>
-
-      <strong id="namaPetugasAktif">
-        -
-      </strong>
-
-    </div>
-
-
     <h3 style="margin-top:0;">
       Arahkan kamera ke QR tiket
     </h3>
 
-
     <div id="reader"></div>
-
 
     <div
       id="scannerStatus"
       class="status info"
     >
-      Membuka kamera...
+      Kamera aktif. Arahkan QR ke kamera.
     </div>
 
+    <div
+      id="qrDebug"
+      class="qr-debug"
+      style="display:none"
+    ></div>
 
     <button
       type="button"
       class="btn-danger"
-      onclick="tutupKamera()"
+      onclick="stopScanner()"
     >
       ✕ Tutup Kamera
     </button>
@@ -286,42 +254,51 @@ button {
   </div>
 
 
-  <!-- LOADING -->
-
   <div
     id="loading"
     class="loading"
   >
-    ⏳ Membuka halaman check-in...
+    ⏳ Memproses check-in...
   </div>
 
 
-</div>
+  <div
+    class="card result"
+    id="resultCard"
+  >
 
+    <h2 id="resultTitle"></h2>
+
+    <div
+      id="resultStatus"
+      class="status"
+    ></div>
+
+    <div id="resultData"></div>
+
+    <button
+      type="button"
+      class="btn-primary"
+      onclick="scanBerikutnya()"
+    >
+      📷 Scan Tiket Berikutnya
+    </button>
+
+  </div>
+
+</div>
 
 
 <script>
 
 
 /* =====================================================
-   APPS SCRIPT
+   URL APPS SCRIPT
 ===================================================== */
 
 const API_URL =
 "https://script.google.com/macros/s/AKfycbz53X4twAvOSWR8b5LuZW_Ven6SeNaPasnYMdAXr9qX6nkgNwl_2UlNoL_bS0VWfyzFGw/exec";
 
-
-/* =====================================================
-   STORAGE
-===================================================== */
-
-const STORAGE_KEY =
-"misa_petugas";
-
-
-/* =====================================================
-   VARIABLE
-===================================================== */
 
 let html5QrCode = null;
 
@@ -329,50 +306,6 @@ let scannerAktif = false;
 
 let sedangMemproses = false;
 
-let sedangMembukaKamera = false;
-
-
-/* =====================================================
-   SAAT HALAMAN DIBUKA
-===================================================== */
-
-window.addEventListener(
-  "load",
-  function() {
-
-    const petugas =
-      localStorage.getItem(
-        STORAGE_KEY
-      );
-
-
-    if (petugas) {
-
-      document
-        .getElementById("petugas")
-        .value = petugas;
-
-
-      tampilStatus(
-        "statusAwal",
-        "Petugas tersimpan. Klik Mulai Scanner.",
-        "info"
-      );
-
-    }
-
-    else {
-
-      tampilStatus(
-        "statusAwal",
-        "Masukkan nama petugas terlebih dahulu.",
-        "info"
-      );
-
-    }
-
-  }
-);
 
 
 /* =====================================================
@@ -381,23 +314,11 @@ window.addEventListener(
 
 async function mulaiScanner() {
 
-  if (sedangMembukaKamera) {
-    return;
-  }
-
-
-  if (scannerAktif) {
-    return;
-  }
-
-
-  const input =
-    document
-      .getElementById("petugas");
-
-
   const petugas =
-    input.value.trim();
+    document
+      .getElementById("petugas")
+      .value
+      .trim();
 
 
   if (!petugas) {
@@ -408,31 +329,42 @@ async function mulaiScanner() {
       "warning"
     );
 
-    input.focus();
-
     return;
-
   }
 
 
-  /*
-    SIMPAN NAMA PETUGAS
-  */
-
-  localStorage.setItem(
-    STORAGE_KEY,
-    petugas
-  );
-
-
-  sedangMembukaKamera = true;
+  localStorage.setItem("misa_petugas", petugas);
 
 
   try {
 
-    /*
-      Tampilkan scanner
-    */
+    tampilStatus(
+      "statusAwal",
+      "Memeriksa kamera...",
+      "info"
+    );
+
+
+    const stream =
+      await navigator.mediaDevices.getUserMedia({
+
+        video: {
+          facingMode: {
+            ideal: "environment"
+          }
+        },
+
+        audio: false
+
+      });
+
+
+    stream
+      .getTracks()
+      .forEach(
+        track => track.stop()
+      );
+
 
     document
       .getElementById("petugasCard")
@@ -446,73 +378,8 @@ async function mulaiScanner() {
       .remove("hidden");
 
 
-    document
-      .getElementById("namaPetugasAktif")
-      .textContent =
-      petugas;
-
-
-    tampilStatus(
-      "scannerStatus",
-      "Membuka kamera...",
-      "info"
-    );
-
-
-    /*
-      Bersihkan instance lama
-    */
-
-    if (html5QrCode) {
-
-      try {
-
-        if (scannerAktif) {
-          await html5QrCode.stop();
-        }
-
-      }
-
-      catch (e) {}
-
-      try {
-        html5QrCode.clear();
-      }
-
-      catch (e) {}
-
-      html5QrCode = null;
-
-      scannerAktif = false;
-
-    }
-
-
-    /*
-      Bersihkan elemen reader
-    */
-
-    document
-      .getElementById("reader")
-      .innerHTML = "";
-
-
-    /*
-      Jeda kecil agar kamera
-      benar-benar dilepas
-    */
-
-    await tunggu(300);
-
-
-    /*
-      Buat scanner baru
-    */
-
     html5QrCode =
-      new Html5Qrcode(
-        "reader"
-      );
+      new Html5Qrcode("reader");
 
 
     const config = {
@@ -548,11 +415,6 @@ async function mulaiScanner() {
     };
 
 
-    /*
-      LANGSUNG BUKA KAMERA
-      TANPA getUserMedia TERPISAH
-    */
-
     await html5QrCode.start(
 
       {
@@ -581,27 +443,7 @@ async function mulaiScanner() {
 
   catch (error) {
 
-    console.error(
-      "Kamera error:",
-      error
-    );
-
-
-    scannerAktif = false;
-
-
-    try {
-
-      if (html5QrCode) {
-        html5QrCode.clear();
-      }
-
-    }
-
-    catch (e) {}
-
-
-    html5QrCode = null;
+    console.error(error);
 
 
     document
@@ -616,65 +458,17 @@ async function mulaiScanner() {
       .remove("hidden");
 
 
-    let pesan =
-      "Kamera tidak dapat digunakan.";
-
-
-    if (
-      error &&
-      error.name === "NotAllowedError"
-    ) {
-
-      pesan =
-        "Akses kamera ditolak. " +
-        "Izinkan kamera pada browser.";
-
-    }
-
-    else if (
-      error &&
-      error.name === "NotFoundError"
-    ) {
-
-      pesan =
-        "Kamera tidak ditemukan.";
-
-    }
-
-    else if (
-      error &&
-      error.name === "NotReadableError"
-    ) {
-
-      pesan =
-        "Kamera sedang digunakan aplikasi lain. " +
-        "Tutup aplikasi lain yang menggunakan kamera.";
-
-    }
-
-    else if (
-      error &&
-      error.message
-    ) {
-
-      pesan =
-        "Kamera tidak dapat digunakan: " +
-        error.message;
-
-    }
-
-
     tampilStatus(
       "statusAwal",
-      pesan,
+      "Kamera tidak dapat digunakan: " +
+      (
+        error &&
+        error.message
+          ? error.message
+          : "Unknown error"
+      ),
       "error"
     );
-
-  }
-
-  finally {
-
-    sedangMembukaKamera = false;
 
   }
 
@@ -682,7 +476,7 @@ async function mulaiScanner() {
 
 
 /* =====================================================
-   QR BERHASIL
+   QR TERBACA
 ===================================================== */
 
 async function onScanSuccess(
@@ -703,50 +497,31 @@ async function onScanSuccess(
     ).trim();
 
 
-  if (!idRegistrasi) {
-
-    sedangMemproses = false;
-
-    return;
-
-  }
-
-
-  /*
-    Tampilkan status seketika
-  */
-
-  tampilStatus(
-    "scannerStatus",
-    "QR terbaca. Memproses check-in...",
-    "info"
+  console.log(
+    "QR TERBACA:",
+    idRegistrasi
   );
 
 
-  /*
-    Ambil petugas
-  */
-
-  const petugas =
-    localStorage.getItem(
-      STORAGE_KEY
-    ) ||
-    document
-      .getElementById("petugas")
-      .value
-      .trim();
+  const debug =
+    document.getElementById(
+      "qrDebug"
+    );
 
 
-  /*
-    Stop kamera
-  */
+  debug.style.display =
+    "block";
+
+
+  debug.innerHTML =
+    "<b>QR TERBACA:</b><br>" +
+    escapeHTML(
+      idRegistrasi
+    );
+
 
   await stopScanner();
 
-
-  /*
-    Loading
-  */
 
   document
     .getElementById("loading")
@@ -754,41 +529,53 @@ async function onScanSuccess(
     .display = "block";
 
 
-  /*
-    LANGSUNG BUKA APPS SCRIPT
-  */
+  const petugas =
+    document
+      .getElementById("petugas")
+      .value
+      .trim();
+
+
+  panggilAPI(
+    idRegistrasi,
+    petugas
+  );
+
+}
+
+
+/* =====================================================
+   KIRIM CHECK-IN KE APPS SCRIPT
+===================================================== */
+
+function panggilAPI(
+  idRegistrasi,
+  petugas
+) {
 
   const url =
     API_URL +
     "?action=checkin" +
     "&id=" +
-    encodeURIComponent(
-      idRegistrasi
-    ) +
+    encodeURIComponent(idRegistrasi) +
     "&petugas=" +
-    encodeURIComponent(
-      petugas
-    );
-
+    encodeURIComponent(petugas) +
+    "&t=" +
+    Date.now();
 
   console.log(
-    "CHECK-IN URL:",
+    "MEMBUKA HASIL CHECK-IN:",
     url
   );
 
-
   /*
-    Beri sedikit waktu agar
-    kamera benar-benar berhenti
-    sebelum browser pindah halaman.
+    Check-in sengaja memakai navigasi biasa ke Apps Script.
+    Ini menghindari masalah CORS/JSONP di browser HP.
+    Halaman hasil Apps Script menyediakan tombol kembali
+    ke GitHub Pages untuk scan berikutnya.
   */
 
-  await tunggu(150);
-
-
-  window.location.href =
-    url;
-
+  window.location.href = url;
 }
 
 
@@ -798,152 +585,284 @@ async function onScanSuccess(
 
 function onScanFailure() {
 
-  /*
-    Tidak melakukan apa-apa.
-    Scanner tetap aktif.
-  */
+  // scanner terus berjalan
 
 }
 
 
 /* =====================================================
-   STOP SCANNER
+   STOP CAMERA
 ===================================================== */
 
 async function stopScanner() {
 
-  if (!html5QrCode) {
+  if (html5QrCode) {
 
-    scannerAktif = false;
+    try {
 
-    return;
+      if (scannerAktif) {
 
-  }
+        await html5QrCode.stop();
 
-
-  try {
-
-    if (scannerAktif) {
-
-      await html5QrCode.stop();
+      }
 
     }
 
+    catch (error) {
+
+      console.log(
+        "stop:",
+        error
+      );
+
+    }
+
+
+    try {
+
+      html5QrCode.clear();
+
+    }
+
+    catch (error) {}
+
   }
-
-  catch (error) {
-
-    console.log(
-      "Stop camera:",
-      error
-    );
-
-  }
-
-
-  try {
-
-    html5QrCode.clear();
-
-  }
-
-  catch (error) {}
 
 
   html5QrCode = null;
 
   scannerAktif = false;
 
+}
 
-  const reader =
+
+/* =====================================================
+   TAMPIL HASIL
+===================================================== */
+
+function tampilHasil(
+  result
+) {
+
+  document
+    .getElementById("resultCard")
+    .style
+    .display = "block";
+
+
+  const title =
     document.getElementById(
-      "reader"
+      "resultTitle"
     );
 
 
-  if (reader) {
+  const status =
+    document.getElementById(
+      "resultStatus"
+    );
 
-    reader.innerHTML = "";
 
+  const data =
+    document.getElementById(
+      "resultData"
+    );
+
+
+  data.innerHTML = "";
+
+
+  if (
+    !result ||
+    !result.success
+  ) {
+
+    if (
+      result &&
+      result.alreadyCheckedIn
+    ) {
+
+      title.textContent =
+        "⚠️ Sudah Check-In";
+
+
+      tampilStatus(
+        "resultStatus",
+
+        result.message ||
+        "Tiket sudah digunakan.",
+
+        "warning"
+      );
+
+    }
+
+    else {
+
+      title.textContent =
+        "❌ Check-In Ditolak";
+
+
+      tampilStatus(
+        "resultStatus",
+
+        result &&
+        result.message
+          ? result.message
+          : "Tiket tidak dapat digunakan.",
+
+        "error"
+      );
+
+    }
+
+    return;
   }
+
+
+  title.textContent =
+    "✅ Check-In Berhasil";
+
+
+  tampilStatus(
+    "resultStatus",
+
+    result.message ||
+    "Tiket berhasil digunakan.",
+
+    "success"
+  );
+
+
+  tambahData(
+    "Nama",
+    result.nama
+  );
+
+
+  tambahData(
+    "Misa",
+    result.namaMisa
+  );
+
+
+  tambahData(
+    "Tanggal",
+    result.tanggal
+  );
+
+
+  tambahData(
+    "Jam",
+    result.jam
+  );
+
+
+  tambahData(
+    "Jumlah",
+    result.jumlah + " umat"
+  );
+
+
+  tambahData(
+    "Waktu Check-In",
+    result.waktuCheckIn
+  );
 
 }
 
 
 /* =====================================================
-   TUTUP KAMERA MANUAL
+   DATA
 ===================================================== */
 
-async function tutupKamera() {
+function tambahData(
+  label,
+  value
+) {
 
-  await stopScanner();
+  if (
+    value === undefined ||
+    value === null ||
+    value === ""
+  ) {
+
+    return;
+  }
+
+
+  const div =
+    document.createElement(
+      "div"
+    );
+
+
+  div.className =
+    "data-row";
+
+
+  div.innerHTML =
+    '<div class="label-small">' +
+    escapeHTML(label) +
+    '</div>' +
+
+    '<div class="value">' +
+    escapeHTML(
+      String(value)
+    ) +
+    '</div>';
 
 
   document
-    .getElementById("scannerCard")
+    .getElementById(
+      "resultData"
+    )
+    .appendChild(div);
+
+}
+
+
+/* =====================================================
+   SCAN BERIKUTNYA
+===================================================== */
+
+function scanBerikutnya() {
+
+  document
+    .getElementById(
+      "resultCard"
+    )
+    .style
+    .display = "none";
+
+
+  document
+    .getElementById(
+      "petugasCard"
+    )
+    .classList
+    .remove("hidden");
+
+
+  document
+    .getElementById(
+      "scannerCard"
+    )
     .classList
     .add("hidden");
 
 
   document
-    .getElementById("petugasCard")
-    .classList
-    .remove("hidden");
-
-
-  tampilStatus(
-    "statusAwal",
-    "Kamera ditutup. Nama petugas tetap tersimpan.",
-    "info"
-  );
+    .getElementById(
+      "qrDebug"
+    )
+    .style
+    .display = "none";
 
 
   sedangMemproses = false;
 
-}
 
-
-/* =====================================================
-   GANTI PETUGAS
-===================================================== */
-
-async function hapusPetugas() {
-
-  await stopScanner();
-
-
-  localStorage.removeItem(
-    STORAGE_KEY
-  );
-
-
-  document
-    .getElementById("petugas")
-    .value = "";
-
-
-  document
-    .getElementById("scannerCard")
-    .classList
-    .add("hidden");
-
-
-  document
-    .getElementById("petugasCard")
-    .classList
-    .remove("hidden");
-
-
-  tampilStatus(
-    "statusAwal",
-    "Masukkan nama petugas baru.",
-    "info"
-  );
-
-
-  document
-    .getElementById("petugas")
-    .focus();
+  mulaiScanner();
 
 }
 
@@ -959,9 +878,7 @@ function tampilStatus(
 ) {
 
   const el =
-    document.getElementById(
-      id
-    );
+    document.getElementById(id);
 
 
   if (!el) {
@@ -981,7 +898,6 @@ function tampilStatus(
     el.innerHTML = "";
 
     return;
-
   }
 
 
@@ -990,35 +906,101 @@ function tampilStatus(
   );
 
 
-  el.textContent =
-    message;
+  el.innerHTML =
+    escapeHTML(
+      message
+    );
 
 }
 
 
 /* =====================================================
-   TUNGGU
+   ESCAPE
 ===================================================== */
 
-function tunggu(
-  ms
+function escapeHTML(
+  text
 ) {
 
-  return new Promise(
-    function(resolve) {
+  return String(text)
 
-      setTimeout(
-        resolve,
-        ms
-      );
+    .replace(
+      /&/g,
+      "&amp;"
+    )
 
-    }
-  );
+    .replace(
+      /</g,
+      "&lt;"
+    )
+
+    .replace(
+      />/g,
+      "&gt;"
+    )
+
+    .replace(
+      /"/g,
+      "&quot;"
+    )
+
+    .replace(
+      /'/g,
+      "&#039;"
+    );
 
 }
 
-</script>
 
+/* =====================================================
+   LOAD
+===================================================== */
+
+window.addEventListener(
+  "load",
+  function() {
+
+    const input =
+      document.getElementById("petugas");
+
+    const petugasTersimpan =
+      localStorage.getItem("misa_petugas") || "";
+
+    if (petugasTersimpan) {
+      input.value = petugasTersimpan;
+    }
+
+    tampilStatus(
+      "statusAwal",
+      petugasTersimpan
+        ? "Petugas tersimpan. Menyiapkan kamera..."
+        : "Kamera siap. Masukkan nama petugas lalu mulai scanner.",
+      "info"
+    );
+
+    const params =
+      new URLSearchParams(window.location.search);
+
+    if (
+      params.get("scan") === "1" &&
+      petugasTersimpan
+    ) {
+
+      setTimeout(
+        function() {
+
+          mulaiScanner();
+
+        },
+        250
+      );
+
+    }
+
+  }
+);
+
+</script>
 
 </body>
 </html>
