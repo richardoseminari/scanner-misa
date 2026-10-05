@@ -189,7 +189,6 @@ button {
     <p>Scan QR Code tiket umat</p>
   </div>
 
-
   <div class="card" id="petugasCard">
 
     <label for="petugas">
@@ -217,7 +216,6 @@ button {
     ></div>
 
   </div>
-
 
   <div
     class="card hidden"
@@ -253,14 +251,12 @@ button {
 
   </div>
 
-
   <div
     id="loading"
     class="loading"
   >
     ⏳ Memproses check-in...
   </div>
-
 
   <div
     class="card result"
@@ -288,9 +284,7 @@ button {
 
 </div>
 
-
 <script>
-
 
 /* =====================================================
    URL APPS SCRIPT
@@ -306,9 +300,12 @@ let scannerAktif = false;
 
 let sedangMemproses = false;
 
-let jsonpScript = null;
+let checkinFrame = null;
 
-let jsonpTimer = null;
+let checkinTimer = null;
+
+const GITHUB_ORIGIN =
+"https://richardoseminari.github.io";
 
 
 /* =====================================================
@@ -323,7 +320,6 @@ async function mulaiScanner() {
       .value
       .trim();
 
-
   if (!petugas) {
 
     tampilStatus(
@@ -335,7 +331,6 @@ async function mulaiScanner() {
     return;
   }
 
-
   try {
 
     tampilStatus(
@@ -343,7 +338,6 @@ async function mulaiScanner() {
       "Memeriksa kamera...",
       "info"
     );
-
 
     const stream =
       await navigator.mediaDevices.getUserMedia({
@@ -358,29 +352,24 @@ async function mulaiScanner() {
 
       });
 
-
     stream
       .getTracks()
       .forEach(
         track => track.stop()
       );
 
-
     document
       .getElementById("petugasCard")
       .classList
       .add("hidden");
-
 
     document
       .getElementById("scannerCard")
       .classList
       .remove("hidden");
 
-
     html5QrCode =
       new Html5Qrcode("reader");
-
 
     const config = {
 
@@ -414,7 +403,6 @@ async function mulaiScanner() {
 
     };
 
-
     await html5QrCode.start(
 
       {
@@ -429,9 +417,7 @@ async function mulaiScanner() {
 
     );
 
-
     scannerAktif = true;
-
 
     tampilStatus(
       "scannerStatus",
@@ -445,18 +431,15 @@ async function mulaiScanner() {
 
     console.error(error);
 
-
     document
       .getElementById("scannerCard")
       .classList
       .add("hidden");
 
-
     document
       .getElementById("petugasCard")
       .classList
       .remove("hidden");
-
 
     tampilStatus(
       "statusAwal",
@@ -487,31 +470,25 @@ async function onScanSuccess(
     return;
   }
 
-
   sedangMemproses = true;
-
 
   const idRegistrasi =
     String(
       decodedText || ""
     ).trim();
 
-
   console.log(
     "QR TERBACA:",
     idRegistrasi
   );
-
 
   const debug =
     document.getElementById(
       "qrDebug"
     );
 
-
   debug.style.display =
     "block";
-
 
   debug.innerHTML =
     "<b>QR TERBACA:</b><br>" +
@@ -519,22 +496,18 @@ async function onScanSuccess(
       idRegistrasi
     );
 
-
   await stopScanner();
-
 
   document
     .getElementById("loading")
     .style
     .display = "block";
 
-
   const petugas =
     document
       .getElementById("petugas")
       .value
       .trim();
-
 
   panggilAPI(
     idRegistrasi,
@@ -545,7 +518,52 @@ async function onScanSuccess(
 
 
 /* =====================================================
-   JSONP
+   MENERIMA HASIL DARI CALLBACK.HTML
+===================================================== */
+
+window.addEventListener(
+  "message",
+  function(event) {
+
+    if (event.origin !== GITHUB_ORIGIN) {
+      return;
+    }
+
+    const data =
+      event.data || {};
+
+    if (
+      data.type !==
+      "MISA_CHECKIN_RESULT"
+    ) {
+      return;
+    }
+
+    console.log(
+      "RESPON CHECK-IN:",
+      data.result
+    );
+
+    bersihkanCheckInFrame();
+
+    document
+      .getElementById("loading")
+      .style
+      .display = "none";
+
+    tampilHasil(
+      data.result
+    );
+
+    sedangMemproses = false;
+
+  },
+  false
+);
+
+
+/* =====================================================
+   PANGGIL APPS SCRIPT VIA HIDDEN IFRAME
 ===================================================== */
 
 function panggilAPI(
@@ -553,49 +571,11 @@ function panggilAPI(
   petugas
 ) {
 
-  bersihkanJSONP();
-
-
-  const callbackName =
-    "misaCheckIn_" +
-    Date.now();
-
-
-  /*
-    Fungsi callback harus berada di window.
-  */
-
-  window[callbackName] =
-    function(result) {
-
-      console.log(
-        "RESPON API:",
-        result
-      );
-
-
-      bersihkanJSONP();
-
-
-      document
-        .getElementById("loading")
-        .style
-        .display = "none";
-
-
-      tampilHasil(
-        result
-      );
-
-
-      sedangMemproses = false;
-
-    };
-
+  bersihkanCheckInFrame();
 
   const url =
     API_URL +
-    "?action=checkin" +
+    "?action=checkin_iframe" +
     "&id=" +
     encodeURIComponent(
       idRegistrasi
@@ -604,123 +584,67 @@ function panggilAPI(
     encodeURIComponent(
       petugas
     ) +
-    "&callback=" +
-    encodeURIComponent(
-      callbackName
-    ) +
     "&t=" +
     Date.now();
 
-
   console.log(
-    "MEMANGGIL API:",
+    "MEMANGGIL CHECK-IN:",
     url
   );
 
-
-  jsonpScript =
+  checkinFrame =
     document.createElement(
-      "script"
+      "iframe"
     );
 
+  checkinFrame.title =
+    "Check-in API";
 
-  jsonpScript.src =
+  checkinFrame.setAttribute(
+    "aria-hidden",
+    "true"
+  );
+
+  checkinFrame.style.position =
+    "fixed";
+
+  checkinFrame.style.width =
+    "1px";
+
+  checkinFrame.style.height =
+    "1px";
+
+  checkinFrame.style.border =
+    "0";
+
+  checkinFrame.style.opacity =
+    "0";
+
+  checkinFrame.style.pointerEvents =
+    "none";
+
+  checkinFrame.src =
     url;
 
+  document.body.appendChild(
+    checkinFrame
+  );
 
-  jsonpScript.async =
-    true;
-
-
-  /*
-    Jika browser benar-benar gagal
-    memuat script, tampilkan URL-nya.
-  */
-
-  jsonpScript.onerror =
-    function() {
-
-      const pesan =
-        "Browser gagal memuat API check-in.";
-
-
-      console.error(
-        pesan,
-        url
-      );
-
-
-      bersihkanJSONP();
-
-
-      document
-        .getElementById("loading")
-        .style
-        .display = "none";
-
-
-      tampilHasil({
-
-        success: false,
-
-        alreadyCheckedIn: false,
-
-        message:
-          pesan +
-          " URL API sudah ditampilkan di bawah."
-
-      });
-
-
-      const debug =
-        document.getElementById(
-          "qrDebug"
-        );
-
-
-      debug.style.display =
-        "block";
-
-
-      debug.innerHTML =
-        "<b>URL API:</b><br>" +
-        escapeHTML(url);
-
-
-      sedangMemproses = false;
-
-    };
-
-
-  document
-    .head
-    .appendChild(
-      jsonpScript
-    );
-
-
-  /*
-    Timeout 15 detik.
-  */
-
-  jsonpTimer =
+  checkinTimer =
     setTimeout(
       function() {
 
         console.error(
-          "TIMEOUT API:",
+          "TIMEOUT CHECK-IN:",
           url
         );
 
-
-        bersihkanJSONP();
-
+        bersihkanCheckInFrame();
 
         document
           .getElementById("loading")
           .style
           .display = "none";
-
 
         tampilHasil({
 
@@ -729,25 +653,21 @@ function panggilAPI(
           alreadyCheckedIn: false,
 
           message:
-            "API check-in tidak memberikan respons."
+            "Server check-in tidak memberikan respons dalam 15 detik."
 
         });
-
 
         const debug =
           document.getElementById(
             "qrDebug"
           );
 
-
         debug.style.display =
           "block";
 
-
         debug.innerHTML =
-          "<b>URL API yang dipanggil:</b><br>" +
+          "<b>URL check-in:</b><br>" +
           escapeHTML(url);
-
 
         sedangMemproses = false;
 
@@ -759,33 +679,35 @@ function panggilAPI(
 
 
 /* =====================================================
-   BERSIHKAN JSONP
+   BERSIHKAN IFRAME
 ===================================================== */
 
-function bersihkanJSONP() {
+function bersihkanCheckInFrame() {
 
-  if (jsonpTimer) {
+  if (checkinTimer) {
 
     clearTimeout(
-      jsonpTimer
+      checkinTimer
     );
 
-    jsonpTimer = null;
+    checkinTimer = null;
 
   }
 
-
-  if (jsonpScript) {
+  if (checkinFrame) {
 
     try {
 
-      jsonpScript.remove();
+      checkinFrame.src =
+        "about:blank";
+
+      checkinFrame.remove();
 
     }
 
     catch (e) {}
 
-    jsonpScript = null;
+    checkinFrame = null;
 
   }
 
@@ -798,7 +720,7 @@ function bersihkanJSONP() {
 
 function onScanFailure() {
 
-  // scanner terus berjalan
+  // scanner tetap berjalan
 
 }
 
@@ -830,7 +752,6 @@ async function stopScanner() {
 
     }
 
-
     try {
 
       html5QrCode.clear();
@@ -840,7 +761,6 @@ async function stopScanner() {
     catch (error) {}
 
   }
-
 
   html5QrCode = null;
 
@@ -862,27 +782,22 @@ function tampilHasil(
     .style
     .display = "block";
 
-
   const title =
     document.getElementById(
       "resultTitle"
     );
-
 
   const status =
     document.getElementById(
       "resultStatus"
     );
 
-
   const data =
     document.getElementById(
       "resultData"
     );
 
-
   data.innerHTML = "";
-
 
   if (
     !result ||
@@ -896,7 +811,6 @@ function tampilHasil(
 
       title.textContent =
         "⚠️ Sudah Check-In";
-
 
       tampilStatus(
         "resultStatus",
@@ -914,7 +828,6 @@ function tampilHasil(
       title.textContent =
         "❌ Check-In Ditolak";
 
-
       tampilStatus(
         "resultStatus",
 
@@ -931,10 +844,8 @@ function tampilHasil(
     return;
   }
 
-
   title.textContent =
     "✅ Check-In Berhasil";
-
 
   tampilStatus(
     "resultStatus",
@@ -945,36 +856,31 @@ function tampilHasil(
     "success"
   );
 
-
   tambahData(
     "Nama",
     result.nama
   );
-
 
   tambahData(
     "Misa",
     result.namaMisa
   );
 
-
   tambahData(
     "Tanggal",
     result.tanggal
   );
-
 
   tambahData(
     "Jam",
     result.jam
   );
 
-
   tambahData(
     "Jumlah",
-    result.jumlah + " umat"
+    result.jumlah +
+    " umat"
   );
-
 
   tambahData(
     "Waktu Check-In",
@@ -985,7 +891,7 @@ function tampilHasil(
 
 
 /* =====================================================
-   DATA
+   TAMBAH DATA HASIL
 ===================================================== */
 
 function tambahData(
@@ -1000,18 +906,16 @@ function tambahData(
   ) {
 
     return;
-  }
 
+  }
 
   const div =
     document.createElement(
       "div"
     );
 
-
   div.className =
     "data-row";
-
 
   div.innerHTML =
     '<div class="label-small">' +
@@ -1024,12 +928,13 @@ function tambahData(
     ) +
     '</div>';
 
-
   document
     .getElementById(
       "resultData"
     )
-    .appendChild(div);
+    .appendChild(
+      div
+    );
 
 }
 
@@ -1047,14 +952,12 @@ function scanBerikutnya() {
     .style
     .display = "none";
 
-
   document
     .getElementById(
       "petugasCard"
     )
     .classList
     .remove("hidden");
-
 
   document
     .getElementById(
@@ -1063,7 +966,6 @@ function scanBerikutnya() {
     .classList
     .add("hidden");
 
-
   document
     .getElementById(
       "qrDebug"
@@ -1071,9 +973,8 @@ function scanBerikutnya() {
     .style
     .display = "none";
 
-
-  sedangMemproses = false;
-
+  sedangMemproses =
+    false;
 
   mulaiScanner();
 
@@ -1093,31 +994,28 @@ function tampilStatus(
   const el =
     document.getElementById(id);
 
-
   if (!el) {
     return;
   }
 
-
   el.className =
     "status";
-
 
   if (!message) {
 
     el.style.display =
       "none";
 
-    el.innerHTML = "";
+    el.innerHTML =
+      "";
 
     return;
-  }
 
+  }
 
   el.classList.add(
     type
   );
-
 
   el.innerHTML =
     escapeHTML(
@@ -1128,7 +1026,7 @@ function tampilStatus(
 
 
 /* =====================================================
-   ESCAPE
+   ESCAPE HTML
 ===================================================== */
 
 function escapeHTML(
