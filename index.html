@@ -386,31 +386,16 @@ async function mulaiScanner() {
 
     tampilStatus(
       "statusAwal",
-      "Memeriksa kamera...",
+      "Membuka kamera...",
       "info"
     );
 
 
-    const stream =
-      await navigator.mediaDevices.getUserMedia({
-
-        video: {
-          facingMode: {
-            ideal: "environment"
-          }
-        },
-
-        audio: false
-
-      });
-
-
-    stream
-      .getTracks()
-      .forEach(
-        track => track.stop()
-      );
-
+    /*
+      Html5Qrcode membuka kamera satu kali.
+      Tidak ada getUserMedia() terpisah di sini,
+      supaya kamera tidak dibuka lalu ditutup sebelum scanner mulai.
+    */
 
     document
       .getElementById("petugasCard")
@@ -506,7 +491,7 @@ async function mulaiScanner() {
 
     tampilStatus(
       "statusAwal",
-      "Kamera tidak dapat digunakan: " +
+      "Kamera belum terbuka. Tekan Mulai Scanner untuk mencoba lagi. " +
       (
         error &&
         error.message
@@ -975,23 +960,58 @@ window.addEventListener(
     const tersimpan =
       ambilPetugasTersimpan();
 
+    const params =
+      new URLSearchParams(
+        window.location.search
+      );
+
+    const scanBerikutnya =
+      params.get("scan") === "1";
+
     if (tersimpan) {
+
       document.getElementById("petugas").value =
         tersimpan;
 
-      tampilStatus(
-        "statusAwal",
-        "Petugas tersimpan: " +
-        tersimpan +
-        ". Tekan Mulai Scanner.",
-        "info"
-      );
+      if (scanBerikutnya) {
+
+        tampilStatus(
+          "statusAwal",
+          "Petugas tersimpan. Membuka kamera...",
+          "info"
+        );
+
+        /*
+          Dipanggil otomatis setelah kembali dari
+          halaman hasil check-in.
+        */
+        setTimeout(
+          function() {
+            mulaiScanner();
+          },
+          400
+        );
+
+      } else {
+
+        tampilStatus(
+          "statusAwal",
+          "Petugas tersimpan: " +
+          tersimpan +
+          ". Tekan Mulai Scanner.",
+          "info"
+        );
+
+      }
+
     } else {
+
       tampilStatus(
         "statusAwal",
         "Masukkan nama petugas lalu mulai scanner.",
         "info"
       );
+
     }
 
   }
