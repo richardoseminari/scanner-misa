@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="id">
 <head>
   <meta charset="UTF-8">
 
@@ -19,7 +19,6 @@
 
     body {
       margin: 0;
-      padding: 0;
       background: #f4f6f8;
       font-family: Arial, sans-serif;
       color: #202124;
@@ -28,7 +27,7 @@
     .container {
       width: 100%;
       max-width: 520px;
-      margin: 0 auto;
+      margin: auto;
       padding: 20px 16px 40px;
     }
 
@@ -49,7 +48,6 @@
     .header p {
       margin: 0;
       font-size: 14px;
-      opacity: .9;
     }
 
     .card {
@@ -64,7 +62,6 @@
       display: block;
       font-weight: bold;
       margin-bottom: 8px;
-      font-size: 14px;
     }
 
     input {
@@ -73,7 +70,6 @@
       border: 1px solid #d0d7de;
       border-radius: 12px;
       font-size: 16px;
-      outline: none;
     }
 
     button {
@@ -165,16 +161,6 @@
       display: none !important;
     }
 
-    .camera-help {
-      margin-top: 12px;
-      padding: 13px;
-      background: #f8f9fa;
-      border-radius: 12px;
-      font-size: 13px;
-      line-height: 1.5;
-      color: #555;
-    }
-
     .loading {
       text-align: center;
       padding: 15px;
@@ -191,6 +177,21 @@
       word-break: break-all;
       display: none;
     }
+
+    /*
+      Bridge iframe.
+      Tidak terlihat oleh pengguna.
+    */
+    #bridgeFrame {
+      position: fixed;
+      width: 1px;
+      height: 1px;
+      border: 0;
+      opacity: 0;
+      pointer-events: none;
+      left: -10px;
+      top: -10px;
+    }
   </style>
 </head>
 
@@ -203,10 +204,14 @@
     <p>Scan QR Code tiket umat</p>
   </div>
 
+
   <!-- PETUGAS -->
+
   <div class="card" id="petugasCard">
 
-    <label for="petugas">Nama Petugas</label>
+    <label for="petugas">
+      Nama Petugas
+    </label>
 
     <input
       type="text"
@@ -223,19 +228,20 @@
       📷 Mulai Scanner
     </button>
 
-    <div id="statusAwal" class="status"></div>
-
-    <div class="camera-help">
-      <b>Catatan:</b><br>
-      Izinkan akses kamera saat diminta browser.
-      Gunakan Chrome atau Safari.
-    </div>
+    <div
+      id="statusAwal"
+      class="status"
+    ></div>
 
   </div>
 
 
   <!-- SCANNER -->
-  <div class="card hidden" id="scannerCard">
+
+  <div
+    class="card hidden"
+    id="scannerCard"
+  >
 
     <h3 style="margin-top:0;">
       Arahkan kamera ke QR tiket
@@ -243,11 +249,17 @@
 
     <div id="reader"></div>
 
-    <div id="scannerStatus" class="status info">
+    <div
+      id="scannerStatus"
+      class="status info"
+    >
       Kamera aktif. Arahkan ke QR Code tiket.
     </div>
 
-    <div id="qrDebug" class="qr-debug"></div>
+    <div
+      id="qrDebug"
+      class="qr-debug"
+    ></div>
 
     <button
       type="button"
@@ -261,17 +273,25 @@
 
 
   <!-- LOADING -->
+
   <div id="loading" class="loading">
     ⏳ Memproses check-in...
   </div>
 
 
-  <!-- RESULT -->
-  <div class="card result" id="resultCard">
+  <!-- HASIL -->
+
+  <div
+    class="card result"
+    id="resultCard"
+  >
 
     <h2 id="resultTitle"></h2>
 
-    <div id="resultStatus" class="status"></div>
+    <div
+      id="resultStatus"
+      class="status"
+    ></div>
 
     <div id="resultData"></div>
 
@@ -288,25 +308,51 @@
 </div>
 
 
+<!-- BRIDGE -->
+
+<iframe
+  id="bridgeFrame"
+  name="bridgeFrame"
+></iframe>
+
+
 <script>
 
-const API_URL =
+/* =========================================================
+   KONFIGURASI
+========================================================= */
+
+const APPS_SCRIPT_URL =
   "https://script.google.com/macros/s/AKfycbz53X4twAvOSWR8b5LuZW_Ven6SeNaPasnYMdAXr9qX6nkgNwl_2UlNoL_bS0VWfyzFGw/exec";
 
 
+const GITHUB_ORIGIN =
+  "https://richardoseminari.github.io";
+
+
 let html5QrCode = null;
+
 let scannerAktif = false;
+
 let sedangMemproses = false;
+
+let bridgeTimeout = null;
+
+let bridgeNonce = null;
 
 
 /* =========================================================
    MULAI SCANNER
-   ========================================================= */
+========================================================= */
 
 async function mulaiScanner() {
 
   const petugas =
-    document.getElementById("petugas").value.trim();
+    document
+      .getElementById("petugas")
+      .value
+      .trim();
+
 
   if (!petugas) {
 
@@ -320,11 +366,14 @@ async function mulaiScanner() {
   }
 
 
-  if (typeof Html5Qrcode === "undefined") {
+  if (
+    typeof Html5Qrcode ===
+    "undefined"
+  ) {
 
     tampilStatus(
       "statusAwal",
-      "Library scanner belum berhasil dimuat. Refresh halaman.",
+      "Library scanner belum berhasil dimuat.",
       "error"
     );
 
@@ -341,40 +390,55 @@ async function mulaiScanner() {
     );
 
 
+    /*
+      Minta izin kamera.
+    */
+
     const stream =
-      await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: {
-            ideal: "environment"
-          }
-        },
-        audio: false
-      });
+      await navigator
+        .mediaDevices
+        .getUserMedia({
+
+          video: {
+            facingMode: {
+              ideal: "environment"
+            }
+          },
+
+          audio: false
+
+        });
 
 
     stream
       .getTracks()
-      .forEach(track => track.stop());
+      .forEach(
+        track => track.stop()
+      );
 
 
     document
       .getElementById("petugasCard")
-      .classList.add("hidden");
+      .classList
+      .add("hidden");
 
 
     document
       .getElementById("scannerCard")
-      .classList.remove("hidden");
+      .classList
+      .remove("hidden");
 
 
     document
       .getElementById("resultCard")
-      .style.display = "none";
+      .style
+      .display = "none";
 
 
     document
       .getElementById("qrDebug")
-      .style.display = "none";
+      .style
+      .display = "none";
 
 
     html5QrCode =
@@ -385,26 +449,31 @@ async function mulaiScanner() {
 
       fps: 10,
 
-      qrbox: function(
-        viewfinderWidth,
-        viewfinderHeight
-      ) {
+      qrbox:
+        function(
+          viewfinderWidth,
+          viewfinderHeight
+        ) {
 
-        const minEdge =
-          Math.min(
-            viewfinderWidth,
-            viewfinderHeight
-          );
+          const minEdge =
+            Math.min(
+              viewfinderWidth,
+              viewfinderHeight
+            );
 
-        const size =
-          Math.floor(minEdge * 0.70);
 
-        return {
-          width: size,
-          height: size
-        };
+          const size =
+            Math.floor(
+              minEdge * 0.70
+            );
 
-      },
+
+          return {
+            width: size,
+            height: size
+          };
+
+        },
 
       aspectRatio: 1.0
 
@@ -441,14 +510,17 @@ async function mulaiScanner() {
 
     console.error(error);
 
+
     document
       .getElementById("scannerCard")
-      .classList.add("hidden");
+      .classList
+      .add("hidden");
 
 
     document
       .getElementById("petugasCard")
-      .classList.remove("hidden");
+      .classList
+      .remove("hidden");
 
 
     let pesan =
@@ -457,7 +529,8 @@ async function mulaiScanner() {
 
     if (
       error &&
-      error.name === "NotAllowedError"
+      error.name ===
+      "NotAllowedError"
     ) {
 
       pesan =
@@ -467,7 +540,8 @@ async function mulaiScanner() {
 
     else if (
       error &&
-      error.name === "NotFoundError"
+      error.name ===
+      "NotFoundError"
     ) {
 
       pesan =
@@ -477,7 +551,8 @@ async function mulaiScanner() {
 
     else if (
       error &&
-      error.name === "NotReadableError"
+      error.name ===
+      "NotReadableError"
     ) {
 
       pesan =
@@ -498,10 +573,12 @@ async function mulaiScanner() {
 
 
 /* =========================================================
-   QR TERBACA
-   ========================================================= */
+   QR BERHASIL TERBACA
+========================================================= */
 
-async function onScanSuccess(decodedText) {
+async function onScanSuccess(
+  decodedText
+) {
 
   if (sedangMemproses) {
     return;
@@ -511,26 +588,32 @@ async function onScanSuccess(decodedText) {
   sedangMemproses = true;
 
 
+  const qrText =
+    String(
+      decodedText || ""
+    ).trim();
+
+
   console.log(
     "QR TERBACA:",
-    decodedText
+    qrText
   );
 
 
-  const qrText =
-    String(decodedText || "").trim();
-
-
   /*
-   * Tampilkan isi QR.
-   * Ini penting untuk memastikan QR yang dibaca
-   * memang berisi REG-XXXX.
-   */
+    Tampilkan isi QR untuk memastikan
+    scanner membaca ID yang benar.
+  */
 
   const debug =
-    document.getElementById("qrDebug");
+    document.getElementById(
+      "qrDebug"
+    );
 
-  debug.style.display = "block";
+
+  debug.style.display =
+    "block";
+
 
   debug.innerHTML =
     "<b>QR terbaca:</b><br>" +
@@ -542,7 +625,32 @@ async function onScanSuccess(decodedText) {
 
   document
     .getElementById("loading")
-    .style.display = "block";
+    .style
+    .display = "block";
+
+
+  if (!qrText) {
+
+    tampilHasil({
+
+      success: false,
+
+      message:
+        "Isi QR Code kosong."
+
+    });
+
+
+    document
+      .getElementById("loading")
+      .style
+      .display = "none";
+
+
+    sedangMemproses = false;
+
+    return;
+  }
 
 
   const petugas =
@@ -552,32 +660,7 @@ async function onScanSuccess(decodedText) {
       .trim();
 
 
-  if (!qrText) {
-
-    document
-      .getElementById("loading")
-      .style.display = "none";
-
-
-    tampilHasil({
-      success: false,
-      message: "Isi QR Code kosong."
-    });
-
-
-    sedangMemproses = false;
-
-    return;
-  }
-
-
-  /*
-   * Panggil Apps Script menggunakan JSONP.
-   *
-   * TIDAK menggunakan google.script.run.
-   */
-
-  panggilCheckIn(
+  kirimKeBridge(
     qrText,
     petugas
   );
@@ -586,176 +669,261 @@ async function onScanSuccess(decodedText) {
 
 
 /* =========================================================
-   JSONP CHECK-IN
-   ========================================================= */
+   KIRIM KE BRIDGE
+========================================================= */
 
-function panggilCheckIn(
+function kirimKeBridge(
   idRegistrasi,
   petugas
 ) {
 
-  const callbackName =
-    "checkinCallback_" +
-    Date.now() +
-    "_" +
-    Math.floor(
-      Math.random() * 100000
+  /*
+    Bersihkan timeout lama.
+  */
+
+  if (bridgeTimeout) {
+
+    clearTimeout(
+      bridgeTimeout
     );
 
+    bridgeTimeout = null;
 
-  let selesai = false;
-
-
-  window[callbackName] =
-    function(result) {
-
-      if (selesai) {
-        return;
-      }
-
-      selesai = true;
+  }
 
 
-      bersihkan();
+  /*
+    Buat nonce unik.
+  */
+
+  bridgeNonce =
+    Date.now().toString() +
+    "_" +
+    Math.random()
+      .toString(36)
+      .substring(2);
 
 
-      document
-        .getElementById("loading")
-        .style.display = "none";
-
-
-      tampilHasil(result);
-
-
-      sedangMemproses = false;
-
-    };
-
-
-  const script =
-    document.createElement("script");
-
+  /*
+    Susun URL Bridge.
+  */
 
   const url =
-    API_URL +
-    "?action=checkin" +
+    APPS_SCRIPT_URL +
+    "?page=bridge" +
     "&id=" +
-    encodeURIComponent(idRegistrasi) +
+    encodeURIComponent(
+      idRegistrasi
+    ) +
     "&petugas=" +
-    encodeURIComponent(petugas) +
-    "&callback=" +
-    encodeURIComponent(callbackName) +
+    encodeURIComponent(
+      petugas
+    ) +
+    "&target=" +
+    encodeURIComponent(
+      GITHUB_ORIGIN
+    ) +
+    "&nonce=" +
+    encodeURIComponent(
+      bridgeNonce
+    ) +
     "&t=" +
     Date.now();
 
 
-  script.src = url;
+  console.log(
+    "BRIDGE URL:",
+    url
+  );
 
 
-  script.onerror =
-    function() {
+  /*
+    Bersihkan iframe lama.
+  */
 
-      if (selesai) {
-        return;
-      }
-
-      selesai = true;
-
-
-      bersihkan();
+  const oldFrame =
+    document.getElementById(
+      "bridgeFrame"
+    );
 
 
-      document
-        .getElementById("loading")
-        .style.display = "none";
+  if (oldFrame) {
+
+    oldFrame.remove();
+
+  }
 
 
-      tampilHasil({
-        success: false,
-        message:
-          "Server check-in tidak dapat dihubungi."
-      });
+  /*
+    Buat iframe baru.
+  */
+
+  const frame =
+    document.createElement(
+      "iframe"
+    );
 
 
-      sedangMemproses = false;
+  frame.id =
+    "bridgeFrame";
 
-    };
+
+  frame.name =
+    "bridgeFrame";
+
+
+  frame.src =
+    url;
 
 
   document
     .body
-    .appendChild(script);
+    .appendChild(frame);
 
 
   /*
-   * Timeout.
-   */
+    Jika dalam 20 detik tidak ada
+    balasan dari Bridge, tampilkan error.
+  */
 
-  setTimeout(
-    function() {
+  bridgeTimeout =
+    setTimeout(
+      function() {
 
-      if (selesai) {
-        return;
-      }
-
-      selesai = true;
+        bridgeTimeout = null;
 
 
-      bersihkan();
+        tampilHasil({
+
+          success: false,
+
+          alreadyCheckedIn: false,
+
+          message:
+            "Bridge check-in tidak merespons."
+
+        });
 
 
-      document
-        .getElementById("loading")
-        .style.display = "none";
+        document
+          .getElementById(
+            "loading"
+          )
+          .style
+          .display = "none";
 
 
-      tampilHasil({
-        success: false,
-        message:
-          "Server tidak merespons."
-      });
+        sedangMemproses = false;
 
-
-      sedangMemproses = false;
-
-    },
-    15000
-  );
-
-
-  function bersihkan() {
-
-    try {
-      script.remove();
-    }
-    catch (e) {}
-
-
-    try {
-      delete window[callbackName];
-    }
-    catch (e) {}
-
-  }
+      },
+      20000
+    );
 
 }
+
+
+/* =========================================================
+   TERIMA HASIL DARI BRIDGE
+========================================================= */
+
+window.addEventListener(
+  "message",
+  function(event) {
+
+    console.log(
+      "MESSAGE DITERIMA:",
+      event.data
+    );
+
+
+    if (
+      !event.data ||
+      event.data.type !==
+      "MISA_CHECKIN_RESULT"
+    ) {
+
+      return;
+    }
+
+
+    /*
+      Pastikan nonce sesuai.
+    */
+
+    if (
+      event.data.nonce !==
+      bridgeNonce
+    ) {
+
+      console.warn(
+        "Nonce tidak cocok."
+      );
+
+      return;
+    }
+
+
+    /*
+      Hentikan timeout.
+    */
+
+    if (bridgeTimeout) {
+
+      clearTimeout(
+        bridgeTimeout
+      );
+
+      bridgeTimeout = null;
+
+    }
+
+
+    const hasil =
+      event.data.data;
+
+
+    console.log(
+      "HASIL CHECK-IN:",
+      hasil
+    );
+
+
+    document
+      .getElementById("loading")
+      .style
+      .display = "none";
+
+
+    tampilHasil(
+      hasil
+    );
+
+
+    sedangMemproses = false;
+
+  }
+);
 
 
 /* =========================================================
    SCAN GAGAL
-   ========================================================= */
+========================================================= */
 
-function onScanFailure(errorMessage) {
+function onScanFailure(
+  errorMessage
+) {
 
-  // Sengaja dikosongkan.
-  // Scanner terus mencoba membaca QR.
+  /*
+    Sengaja kosong.
+    Scanner terus mencari QR.
+  */
 
 }
 
 
 /* =========================================================
-   STOP CAMERA
-   ========================================================= */
+   STOP SCANNER
+========================================================= */
 
 async function stopScanner() {
 
@@ -764,7 +932,9 @@ async function stopScanner() {
     try {
 
       if (scannerAktif) {
+
         await html5QrCode.stop();
+
       }
 
     }
@@ -798,20 +968,24 @@ async function stopScanner() {
 
 
   html5QrCode = null;
+
   scannerAktif = false;
 
 }
 
 
 /* =========================================================
-   HASIL
-   ========================================================= */
+   HASIL CHECK-IN
+========================================================= */
 
-function tampilHasil(result) {
+function tampilHasil(
+  result
+) {
 
   document
     .getElementById("resultCard")
-    .style.display = "block";
+    .style
+    .display = "block";
 
 
   const title =
@@ -835,6 +1009,10 @@ function tampilHasil(result) {
   data.innerHTML = "";
 
 
+  /*
+    GAGAL / SUDAH CHECK-IN
+  */
+
   if (
     !result ||
     !result.success
@@ -851,8 +1029,10 @@ function tampilHasil(result) {
 
       tampilStatus(
         "resultStatus",
+
         result.message ||
         "Tiket ini sudah pernah digunakan.",
+
         "warning"
       );
 
@@ -866,10 +1046,12 @@ function tampilHasil(result) {
 
       tampilStatus(
         "resultStatus",
+
         result &&
         result.message
           ? result.message
           : "Tiket tidak dapat digunakan.",
+
         "error"
       );
 
@@ -879,14 +1061,20 @@ function tampilHasil(result) {
   }
 
 
+  /*
+    BERHASIL
+  */
+
   title.textContent =
     "✅ Check-In Berhasil";
 
 
   tampilStatus(
     "resultStatus",
+
     result.message ||
     "Tiket berhasil digunakan.",
+
     "success"
   );
 
@@ -917,7 +1105,8 @@ function tampilHasil(result) {
 
   tambahData(
     "Jumlah",
-    result.jumlah + " umat"
+    result.jumlah +
+    " umat"
   );
 
 
@@ -930,8 +1119,8 @@ function tampilHasil(result) {
 
 
 /* =========================================================
-   DATA HASIL
-   ========================================================= */
+   TAMBAH DATA
+========================================================= */
 
 function tambahData(
   label,
@@ -949,7 +1138,9 @@ function tambahData(
 
 
   const div =
-    document.createElement("div");
+    document.createElement(
+      "div"
+    );
 
 
   div.className =
@@ -962,12 +1153,16 @@ function tambahData(
     '</div>' +
 
     '<div class="value">' +
-    escapeHTML(String(value)) +
+    escapeHTML(
+      String(value)
+    ) +
     '</div>';
 
 
   document
-    .getElementById("resultData")
+    .getElementById(
+      "resultData"
+    )
     .appendChild(div);
 
 }
@@ -975,43 +1170,51 @@ function tambahData(
 
 /* =========================================================
    SCAN BERIKUTNYA
-   ========================================================= */
+========================================================= */
 
 function scanBerikutnya() {
 
   document
-    .getElementById("resultCard")
-    .style.display = "none";
+    .getElementById(
+      "resultCard"
+    )
+    .style
+    .display = "none";
 
 
   document
-    .getElementById("petugasCard")
-    .classList.remove("hidden");
+    .getElementById(
+      "petugasCard"
+    )
+    .classList
+    .remove("hidden");
 
 
   document
-    .getElementById("scannerCard")
-    .classList.add("hidden");
+    .getElementById(
+      "scannerCard"
+    )
+    .classList
+    .add("hidden");
 
 
   document
-    .getElementById("loading")
-    .style.display = "none";
+    .getElementById(
+      "loading"
+    )
+    .style
+    .display = "none";
 
 
   document
-    .getElementById("qrDebug")
-    .style.display = "none";
+    .getElementById(
+      "qrDebug"
+    )
+    .style
+    .display = "none";
 
 
   sedangMemproses = false;
-
-
-  tampilStatus(
-    "statusAwal",
-    "",
-    ""
-  );
 
 
   mulaiScanner();
@@ -1021,7 +1224,7 @@ function scanBerikutnya() {
 
 /* =========================================================
    STATUS
-   ========================================================= */
+========================================================= */
 
 function tampilStatus(
   id,
@@ -1053,44 +1256,74 @@ function tampilStatus(
   }
 
 
-  el.classList.add(type);
+  el.classList.add(
+    type
+  );
 
 
   el.innerHTML =
-    escapeHTML(message);
+    escapeHTML(
+      message
+    );
 
 }
 
 
 /* =========================================================
    ESCAPE HTML
-   ========================================================= */
+========================================================= */
 
-function escapeHTML(text) {
+function escapeHTML(
+  text
+) {
 
   return String(text)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
+
+    .replace(
+      /&/g,
+      "&amp;"
+    )
+
+    .replace(
+      /</g,
+      "&lt;"
+    )
+
+    .replace(
+      />/g,
+      "&gt;"
+    )
+
+    .replace(
+      /"/g,
+      "&quot;"
+    )
+
+    .replace(
+      /'/g,
+      "&#039;"
+    );
 
 }
 
 
 /* =========================================================
-   CEK KAMERA
-   ========================================================= */
+   SAAT HALAMAN DIBUKA
+========================================================= */
 
 window.addEventListener(
   "load",
   function() {
 
-    if (!window.isSecureContext) {
+    if (
+      !window.isSecureContext
+    ) {
 
       tampilStatus(
         "statusAwal",
+
         "Halaman scanner harus dibuka melalui HTTPS.",
+
         "error"
       );
 
@@ -1105,7 +1338,9 @@ window.addEventListener(
 
       tampilStatus(
         "statusAwal",
+
         "Browser tidak mendukung akses kamera.",
+
         "error"
       );
 
@@ -1115,7 +1350,9 @@ window.addEventListener(
 
     tampilStatus(
       "statusAwal",
+
       "Kamera siap. Masukkan nama petugas lalu mulai scanner.",
+
       "info"
     );
 
