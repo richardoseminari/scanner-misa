@@ -502,84 +502,22 @@ async function onScanSuccess(
     Tidak ada iframe, fetch/CORS, postMessage, atau pindah halaman.
   */
 
-  const callbackName = "misaCheckinCallback_" + Date.now();
-  const script = document.createElement("script");
+  /*
+    CHECK-IN:
+    Apps Script dibuka langsung oleh browser.
+    Tidak memakai JSONP, fetch/CORS, iframe, atau postMessage.
+  */
 
   const url =
     API_URL +
     "?action=checkin" +
     "&id=" + encodeURIComponent(idRegistrasi) +
     "&petugas=" + encodeURIComponent(petugas) +
-    "&callback=" + encodeURIComponent(callbackName) +
     "&t=" + Date.now();
 
-  console.log("MEMPROSES CHECK-IN:", url);
+  console.log("MEMBUKA API CHECK-IN:", url);
 
-  let selesai = false;
-
-  const timeoutId = setTimeout(function() {
-    if (selesai) return;
-
-    selesai = true;
-    cleanup();
-
-    document.getElementById("loading").style.display = "none";
-
-    tampilHasil({
-      success: false,
-      alreadyCheckedIn: false,
-      message: "Server check-in tidak memberikan jawaban dalam 15 detik. Periksa koneksi internet lalu coba lagi."
-    });
-
-    sedangMemproses = false;
-  }, 15000);
-
-  function cleanup() {
-    clearTimeout(timeoutId);
-
-    try {
-      delete window[callbackName];
-    } catch (e) {}
-
-    if (script.parentNode) {
-      script.parentNode.removeChild(script);
-    }
-  }
-
-  window[callbackName] = function(result) {
-    if (selesai) return;
-
-    selesai = true;
-    cleanup();
-
-    console.log("HASIL CHECK-IN:", result);
-
-    document.getElementById("loading").style.display = "none";
-
-    tampilHasil(result || {});
-
-    sedangMemproses = false;
-  };
-
-  script.onerror = function() {
-    if (selesai) return;
-
-    selesai = true;
-    cleanup();
-
-    document.getElementById("loading").style.display = "none";
-
-    tampilHasil({
-      success: false,
-      alreadyCheckedIn: false,
-      message: "Tidak dapat terhubung ke server check-in. Periksa koneksi internet lalu coba lagi."
-    });
-
-    sedangMemproses = false;
-  };
-
-  script.src = url;
-  document.body.appendChild(script);
+  window.location.href = url;
 
 }
 
