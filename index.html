@@ -87,6 +87,11 @@ button {
   color: white;
 }
 
+.btn-secondary {
+  background: #e9eef5;
+  color: #17365d;
+}
+
 .btn-danger {
   background: #c62828;
   color: white;
@@ -314,10 +319,6 @@ let scannerAktif = false;
 
 let sedangMemproses = false;
 
-let jsonpScript = null;
-
-let jsonpTimer = null;
-
 
 /* =====================================================
    MULAI SCANNER
@@ -348,7 +349,6 @@ function gantiPetugas() {
   } catch (e) {}
 
   document.getElementById("petugas").value = "";
-  document.getElementById("petugasCard").classList.remove("hidden");
 
   tampilStatus(
     "statusAwal",
@@ -533,31 +533,25 @@ async function onScanSuccess(
     return;
   }
 
-
   sedangMemproses = true;
-
 
   const idRegistrasi =
     String(
       decodedText || ""
     ).trim();
 
-
   console.log(
     "QR TERBACA:",
     idRegistrasi
   );
-
 
   const debug =
     document.getElementById(
       "qrDebug"
     );
 
-
   debug.style.display =
     "block";
-
 
   debug.innerHTML =
     "<b>QR TERBACA:</b><br>" +
@@ -565,79 +559,30 @@ async function onScanSuccess(
       idRegistrasi
     );
 
+  /*
+    Setelah QR terbaca, kamera dihentikan.
+    Kemudian halaman scanner ini langsung
+    diarahkan ke halaman hasil Apps Script.
+
+    Tidak menggunakan:
+    - JSONP
+    - postMessage
+    - window.opener
+    - tab baru
+  */
 
   await stopScanner();
-
 
   document
     .getElementById("loading")
     .style
     .display = "block";
 
-
   const petugas =
     document
       .getElementById("petugas")
       .value
       .trim();
-
-
-  panggilAPI(
-    idRegistrasi,
-    petugas
-  );
-
-}
-
-
-/* =====================================================
-   JSONP
-===================================================== */
-
-function panggilAPI(
-  idRegistrasi,
-  petugas
-) {
-
-  bersihkanJSONP();
-
-
-  const callbackName =
-    "misaCheckIn_" +
-    Date.now();
-
-
-  /*
-    Fungsi callback harus berada di window.
-  */
-
-  window[callbackName] =
-    function(result) {
-
-      console.log(
-        "RESPON API:",
-        result
-      );
-
-
-      bersihkanJSONP();
-
-
-      document
-        .getElementById("loading")
-        .style
-        .display = "none";
-
-
-      tampilHasil(
-        result
-      );
-
-
-      sedangMemproses = false;
-
-    };
-
 
   const url =
     API_URL +
@@ -650,191 +595,25 @@ function panggilAPI(
     encodeURIComponent(
       petugas
     ) +
-    "&callback=" +
-    encodeURIComponent(
-      callbackName
-    ) +
     "&t=" +
     Date.now();
 
-
   console.log(
-    "MEMANGGIL API:",
+    "MEMBUKA HASIL CHECK-IN:",
     url
   );
 
-
-  jsonpScript =
-    document.createElement(
-      "script"
-    );
-
-
-  jsonpScript.src =
-    url;
-
-
-  jsonpScript.async =
-    true;
-
-
   /*
-    Jika browser benar-benar gagal
-    memuat script, tampilkan URL-nya.
+    Tunggu sebentar agar kamera benar-benar
+    berhenti sebelum pindah halaman.
   */
 
-  jsonpScript.onerror =
+  setTimeout(
     function() {
-
-      const pesan =
-        "Browser gagal memuat API check-in.";
-
-
-      console.error(
-        pesan,
-        url
-      );
-
-
-      bersihkanJSONP();
-
-
-      document
-        .getElementById("loading")
-        .style
-        .display = "none";
-
-
-      tampilHasil({
-
-        success: false,
-
-        alreadyCheckedIn: false,
-
-        message:
-          pesan +
-          " URL API sudah ditampilkan di bawah."
-
-      });
-
-
-      const debug =
-        document.getElementById(
-          "qrDebug"
-        );
-
-
-      debug.style.display =
-        "block";
-
-
-      debug.innerHTML =
-        "<b>URL API:</b><br>" +
-        escapeHTML(url);
-
-
-      sedangMemproses = false;
-
-    };
-
-
-  document
-    .head
-    .appendChild(
-      jsonpScript
-    );
-
-
-  /*
-    Timeout 15 detik.
-  */
-
-  jsonpTimer =
-    setTimeout(
-      function() {
-
-        console.error(
-          "TIMEOUT API:",
-          url
-        );
-
-
-        bersihkanJSONP();
-
-
-        document
-          .getElementById("loading")
-          .style
-          .display = "none";
-
-
-        tampilHasil({
-
-          success: false,
-
-          alreadyCheckedIn: false,
-
-          message:
-            "API check-in tidak memberikan respons."
-
-        });
-
-
-        const debug =
-          document.getElementById(
-            "qrDebug"
-          );
-
-
-        debug.style.display =
-          "block";
-
-
-        debug.innerHTML =
-          "<b>URL API yang dipanggil:</b><br>" +
-          escapeHTML(url);
-
-
-        sedangMemproses = false;
-
-      },
-      15000
-    );
-
-}
-
-
-/* =====================================================
-   BERSIHKAN JSONP
-===================================================== */
-
-function bersihkanJSONP() {
-
-  if (jsonpTimer) {
-
-    clearTimeout(
-      jsonpTimer
-    );
-
-    jsonpTimer = null;
-
-  }
-
-
-  if (jsonpScript) {
-
-    try {
-
-      jsonpScript.remove();
-
-    }
-
-    catch (e) {}
-
-    jsonpScript = null;
-
-  }
-
+      window.location.href = url;
+    },
+    250
+  );
 }
 
 
@@ -1085,8 +864,17 @@ function tambahData(
 ===================================================== */
 
 function scanBerikutnya() {
+
+  /*
+    Jangan mencoba membuka kamera dari halaman hasil.
+    Kembali sepenuhnya ke halaman awal scanner.
+
+    Parameter ?scan=1 hanya sebagai penanda bahwa
+    halaman dibuka untuk melakukan scan berikutnya.
+  */
+
   window.location.href =
-    "https://richardoseminari.github.io/scanner-misa/?t=" +
+    "https://richardoseminari.github.io/scanner-misa/?scan=1&t=" +
     Date.now();
 }
 
