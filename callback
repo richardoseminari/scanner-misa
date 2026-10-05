@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <title>Check-In Callback</title>
+
+</head>
+
+<body>
+
+<script>
+
+(function () {
+
+  /*
+   * =====================================================
+   * CALLBACK CHECK-IN
+   * =====================================================
+   *
+   * Apps Script akan mengarahkan iframe ke:
+   *
+   * callback.html?checkin_result=...
+   *
+   * File ini membaca hasil tersebut lalu
+   * mengirimkannya kembali ke index.html.
+   */
+
+  const params =
+    new URLSearchParams(
+      window.location.search
+    );
+
+
+  const raw =
+    params.get(
+      "checkin_result"
+    );
+
+
+  let result = {
+
+    success: false,
+
+    alreadyCheckedIn: false,
+
+    message:
+      "Hasil check-in tidak ditemukan."
+
+  };
+
+
+  /*
+   * =====================================================
+   * BACA HASIL DARI APPS SCRIPT
+   * =====================================================
+   */
+
+  if (raw) {
+
+    try {
+
+      result =
+        JSON.parse(
+          raw
+        );
+
+    }
+
+    catch (error) {
+
+      console.error(
+        "Callback JSON error:",
+        error
+      );
+
+      result = {
+
+        success: false,
+
+        alreadyCheckedIn: false,
+
+        message:
+          "Hasil check-in tidak dapat dibaca."
+
+      };
+
+    }
+
+  }
+
+
+  /*
+   * =====================================================
+   * KIRIM KE INDEX.HTML
+   * =====================================================
+   */
+
+  if (
+    window.parent &&
+    window.parent !== window
+  ) {
+
+    window.parent.postMessage(
+
+      {
+
+        type:
+          "MISA_CHECKIN_RESULT",
+
+        result:
+          result
+
+      },
+
+      "https://richardoseminari.github.io"
+
+    );
+
+  }
+
+})();
+
+</script>
+
+</body>
+
+</html>
