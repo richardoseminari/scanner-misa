@@ -9,13 +9,17 @@
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 
   <style>
-    *{box-sizing:border-box}
+    *{
+      box-sizing:border-box;
+    }
+
     body{
       margin:0;
       padding:20px;
       font-family:Arial,sans-serif;
       background:#f4f4f4;
     }
+
     .box{
       max-width:520px;
       margin:auto;
@@ -24,23 +28,42 @@
       border-radius:16px;
       box-shadow:0 3px 15px rgba(0,0,0,.12);
     }
-    h2{text-align:center;margin-top:0}
-    input,button{
+
+    h2{
+      text-align:center;
+      margin-top:0;
+    }
+
+    input,
+    button{
       width:100%;
       padding:14px;
       margin-bottom:12px;
       border-radius:10px;
       font-size:16px;
     }
-    input{border:1px solid #ccc}
+
+    input{
+      border:1px solid #ccc;
+    }
+
     button{
       border:0;
       background:#1976d2;
       color:white;
       font-weight:bold;
+      cursor:pointer;
     }
-    button:disabled{background:#999}
-    #reader{width:100%;margin-top:15px}
+
+    button:disabled{
+      background:#999;
+    }
+
+    #reader{
+      width:100%;
+      margin-top:15px;
+    }
+
     #status{
       padding:14px;
       border-radius:10px;
@@ -49,10 +72,32 @@
       margin-top:15px;
       word-break:break-word;
     }
-    .ok{background:#dff5e1!important;color:#176b22}
-    .err{background:#ffe0e0!important;color:#a00000}
-    .info{background:#e4f0ff!important;color:#14518f}
-    .hidden{display:none}
+
+    .ok{
+      background:#dff5e1!important;
+      color:#176b22;
+    }
+
+    .err{
+      background:#ffe0e0!important;
+      color:#a00000;
+    }
+
+    .info{
+      background:#e4f0ff!important;
+      color:#14518f;
+    }
+
+    .hidden{
+      display:none;
+    }
+
+    .small{
+      font-size:12px;
+      opacity:.75;
+      margin-top:8px;
+      word-break:break-all;
+    }
   </style>
 </head>
 
@@ -69,12 +114,16 @@
     autocomplete="name"
   >
 
-  <button id="btnStart" onclick="mulaiScanner()">
+  <button
+    id="btnStart"
+    type="button"
+    onclick="mulaiScanner()">
     Mulai Scanner
   </button>
 
   <button
     id="btnStop"
+    type="button"
     class="hidden"
     onclick="stopScanner()">
     Hentikan Scanner
@@ -88,43 +137,69 @@
 
 </div>
 
+
 <script>
 
+/* =========================================================
+   KONFIGURASI
+========================================================= */
+
 const API =
-"https://script.google.com/macros/s/AKfycbz53X4twAvOSWR8b5LuZW_Ven6SeNaPasnYMdAXr9qX6nkgNwl_2UlNoL_bS0VWfyzFGw/exec";
+  "https://script.google.com/macros/s/AKfycbz53X4twAvOSWR8b5LuZW_Ven6SeNaPasnYMdAXr9qX6nkgNwl_2UlNoL_bS0VWfyzFGw/exec";
+
+
+/* =========================================================
+   VARIABEL
+========================================================= */
 
 let scanner = null;
+
 let aktif = false;
+
 let sedangProses = false;
-let callbackCounter = 0;
+
+let timeoutCheckIn = null;
 
 
-/* =========================
+/* =========================================================
    STATUS
-========================= */
+========================================================= */
 
-function status(text, type="info") {
+function status(text, type){
 
-  const el = document.getElementById("status");
+  const el =
+    document.getElementById("status");
 
   el.className = "";
 
-  if(type === "ok") el.classList.add("ok");
-  if(type === "err") el.classList.add("err");
-  if(type === "info") el.classList.add("info");
+  if(type === "ok"){
+    el.classList.add("ok");
+  }
+
+  if(type === "err"){
+    el.classList.add("err");
+  }
+
+  if(type === "info"){
+    el.classList.add("info");
+  }
 
   el.innerHTML = text;
 }
 
 
-/* =========================
+/* =========================================================
    MULAI SCANNER
-========================= */
+========================================================= */
 
-async function mulaiScanner() {
+async function mulaiScanner(){
 
   const petugas =
-    document.getElementById("petugas").value.trim();
+    document
+      .getElementById("petugas")
+      .value
+      .trim();
+
 
   if(!petugas){
 
@@ -136,6 +211,7 @@ async function mulaiScanner() {
     return;
   }
 
+
   if(!window.isSecureContext){
 
     status(
@@ -145,6 +221,7 @@ async function mulaiScanner() {
 
     return;
   }
+
 
   if(
     !navigator.mediaDevices ||
@@ -159,16 +236,19 @@ async function mulaiScanner() {
     return;
   }
 
+
   status(
     "Meminta akses kamera...",
     "info"
   );
 
-  try {
+
+  try{
 
     /*
-     * Meminta izin kamera secara langsung.
+     * Minta izin kamera terlebih dahulu.
      */
+
     const stream =
       await navigator.mediaDevices.getUserMedia({
         video:{
@@ -179,16 +259,29 @@ async function mulaiScanner() {
         audio:false
       });
 
+
     /*
-     * Stop stream percobaan.
-     * html5-qrcode akan membuka kamera sendiri.
+     * Tutup stream percobaan.
      */
-    stream.getTracks().forEach(
-      track => track.stop()
-    );
+
+    stream
+      .getTracks()
+      .forEach(
+        track => track.stop()
+      );
+
+
+    /*
+     * Buat scanner.
+     */
 
     scanner =
       new Html5Qrcode("reader");
+
+
+    /*
+     * Jalankan kamera belakang.
+     */
 
     await scanner.start(
 
@@ -219,9 +312,17 @@ async function mulaiScanner() {
 
       qrBerhasil,
 
-      function(){}
+      function(errorMessage){
+
+        /*
+         * Error pembacaan QR biasa
+         * tidak perlu ditampilkan.
+         */
+
+      }
 
     );
+
 
     aktif = true;
 
@@ -233,243 +334,619 @@ async function mulaiScanner() {
       .getElementById("btnStop")
       .classList.remove("hidden");
 
+
     status(
-      "Kamera aktif. Arahkan kamera ke QR tiket.",
+      "Kamera aktif.<br><br>Arahkan kamera ke QR tiket.",
       "info"
     );
 
-  } catch(error){
 
-    console.error(error);
+  }catch(error){
+
+    console.error(
+      "ERROR CAMERA:",
+      error
+    );
+
 
     let pesan =
       "Kamera tidak dapat digunakan.";
 
-    if(error.name === "NotAllowedError"){
+
+    if(
+      error.name ===
+      "NotAllowedError"
+    ){
 
       pesan =
-        "Akses kamera ditolak. Pastikan izin kamera untuk browser sudah diizinkan.";
+        "Akses kamera ditolak. Izinkan kamera untuk browser ini.";
 
-    }else if(error.name === "NotFoundError"){
+    }else if(
+      error.name ===
+      "NotFoundError"
+    ){
 
       pesan =
         "Kamera tidak ditemukan.";
 
-    }else if(error.name === "NotReadableError"){
+    }else if(
+      error.name ===
+      "NotReadableError"
+    ){
 
       pesan =
-        "Kamera sedang digunakan aplikasi lain. Tutup aplikasi kamera lain lalu coba lagi.";
+        "Kamera sedang digunakan aplikasi lain.";
 
-    }else if(error.name === "SecurityError"){
+    }else if(
+      error.name ===
+      "SecurityError"
+    ){
 
       pesan =
-        "Browser memblokir kamera. Pastikan membuka scanner melalui HTTPS.";
-
+        "Browser memblokir kamera. Pastikan menggunakan HTTPS.";
     }
+
 
     status(
       pesan +
       "<br><br><small>" +
-      escapeHtml(error.name || "") +
+      escapeHtml(
+        error.name || ""
+      ) +
       "</small>",
       "err"
     );
+
   }
+
 }
 
 
-/* =========================
-   QR BERHASIL
-========================= */
+/* =========================================================
+   QR BERHASIL TERBACA
+========================================================= */
 
 function qrBerhasil(decodedText){
 
   if(sedangProses){
+
     return;
   }
 
-  sedangProses = true;
 
   const idRegistrasi =
-    decodedText.trim();
+    String(
+      decodedText || ""
+    ).trim();
+
 
   const petugas =
-    document.getElementById("petugas")
-      .value.trim();
+    document
+      .getElementById("petugas")
+      .value
+      .trim();
+
+
+  if(!idRegistrasi){
+
+    return;
+  }
+
+
+  if(!petugas){
+
+    status(
+      "Nama petugas belum diisi.",
+      "err"
+    );
+
+    return;
+  }
+
+
+  /*
+   * Cegah scanner membaca QR yang sama
+   * berkali-kali.
+   */
+
+  sedangProses = true;
+
 
   status(
-    "QR terbaca.<br>Memeriksa tiket...",
+    "<b>QR TERBACA</b><br><br>" +
+    "ID: " +
+    escapeHtml(idRegistrasi) +
+    "<br><br>" +
+    "Menghubungi server...",
     "info"
   );
+
 
   prosesCheckIn(
     idRegistrasi,
     petugas
   );
+
 }
 
 
-/* =========================
+/* =========================================================
+   CALLBACK JSONP GLOBAL
+========================================================= */
+
+window.checkInCallback = function(data){
+
+  console.log(
+    "RESPON CHECK-IN:",
+    data
+  );
+
+
+  /*
+   * Hentikan timeout.
+   */
+
+  if(timeoutCheckIn){
+
+    clearTimeout(
+      timeoutCheckIn
+    );
+
+    timeoutCheckIn = null;
+  }
+
+
+  try{
+
+    if(
+      data &&
+      data.success
+    ){
+
+      status(
+
+        "<b>✓ CHECK-IN BERHASIL</b>" +
+
+        "<br><br>" +
+
+        "Nama: " +
+        escapeHtml(
+          data.nama || ""
+        ) +
+
+        "<br>" +
+
+        "Misa: " +
+        escapeHtml(
+          data.namaMisa || ""
+        ) +
+
+        "<br>" +
+
+        "Jumlah: " +
+        escapeHtml(
+          String(
+            data.jumlah || ""
+          )
+        ) +
+
+        "<br>" +
+
+        "Waktu: " +
+        escapeHtml(
+          data.waktuCheckIn || ""
+        ),
+
+        "ok"
+      );
+
+
+    }else{
+
+      /*
+       * Tiket sudah check-in
+       */
+
+      if(
+        data &&
+        data.alreadyCheckedIn
+      ){
+
+        status(
+
+          "<b>TIKET SUDAH CHECK-IN</b>" +
+
+          "<br><br>" +
+
+          "Nama: " +
+          escapeHtml(
+            data.nama || ""
+          ) +
+
+          "<br>" +
+
+          "Misa: " +
+          escapeHtml(
+            data.namaMisa || ""
+          ) +
+
+          "<br>" +
+
+          "Check-in sebelumnya: " +
+          escapeHtml(
+            data.waktuCheckIn || ""
+          ) +
+
+          "<br>" +
+
+          "Petugas sebelumnya: " +
+          escapeHtml(
+            data.petugasSebelumnya || ""
+          ),
+
+          "err"
+        );
+
+
+      }else{
+
+        status(
+
+          "<b>CHECK-IN GAGAL</b>" +
+
+          "<br><br>" +
+
+          escapeHtml(
+
+            data &&
+            data.message
+
+              ? data.message
+
+              : "Tiket tidak dapat diproses."
+
+          ),
+
+          "err"
+        );
+
+      }
+
+    }
+
+
+  }catch(error){
+
+    console.error(
+      "ERROR CALLBACK:",
+      error
+    );
+
+
+    status(
+      "Terjadi kesalahan saat membaca jawaban server.",
+      "err"
+    );
+
+  }
+
+
+  sedangProses = false;
+
+};
+
+
+/* =========================================================
    CHECK-IN VIA JSONP
-========================= */
+========================================================= */
 
 function prosesCheckIn(
   idRegistrasi,
   petugas
 ){
 
-  callbackCounter++;
+  /*
+   * Bersihkan data.
+   */
 
-  const callbackName =
-    "checkInCallback_" +
-    Date.now() +
-    "_" +
-    callbackCounter;
+  idRegistrasi =
+    String(
+      idRegistrasi || ""
+    ).trim();
 
-  const script =
-    document.createElement("script");
-
-  let selesai = false;
-
-  window[callbackName] =
-    function(data){
-
-      selesai = true;
-
-      try{
-
-        if(data.success){
-
-          status(
-            "<b>CHECK-IN BERHASIL</b><br><br>" +
-            "Nama: " +
-            escapeHtml(data.nama || "") +
-            "<br>" +
-            "Misa: " +
-            escapeHtml(data.namaMisa || "") +
-            "<br>" +
-            "Jumlah: " +
-            escapeHtml(String(data.jumlah || "")) +
-            "<br>" +
-            "Waktu: " +
-            escapeHtml(data.waktuCheckIn || ""),
-            "ok"
-          );
-
-        }else{
-
-          status(
-            "<b>CHECK-IN GAGAL</b><br><br>" +
-            escapeHtml(
-              data.message ||
-              "Tiket tidak dapat diproses."
-            ),
-            "err"
-          );
-        }
-
-      }finally{
-
-        sedangProses = false;
-
-        delete window[callbackName];
-
-        if(script.parentNode){
-          script.parentNode.removeChild(script);
-        }
-      }
-    };
+  petugas =
+    String(
+      petugas || ""
+    ).trim();
 
 
-  script.onerror = function(){
-
-    if(selesai){
-      return;
-    }
+  if(!idRegistrasi){
 
     sedangProses = false;
 
-    delete window[callbackName];
-
-    if(script.parentNode){
-      script.parentNode.removeChild(script);
-    }
-
     status(
-      "<b>SERVER TIDAK DAPAT DIHUBUNGI</b><br><br>" +
-      "Gagal menghubungi server Check-In.",
+      "ID registrasi kosong.",
       "err"
     );
-  };
 
+    return;
+  }
+
+
+  if(!petugas){
+
+    sedangProses = false;
+
+    status(
+      "Nama petugas kosong.",
+      "err"
+    );
+
+    return;
+  }
+
+
+  /*
+   * Buat URL API.
+   *
+   * PENTING:
+   * callback menggunakan nama tetap:
+   * checkInCallback
+   */
 
   const url =
     API +
     "?action=checkin" +
     "&id=" +
-    encodeURIComponent(idRegistrasi) +
+    encodeURIComponent(
+      idRegistrasi
+    ) +
     "&petugas=" +
-    encodeURIComponent(petugas) +
-    "&callback=" +
-    encodeURIComponent(callbackName) +
+    encodeURIComponent(
+      petugas
+    ) +
+    "&callback=checkInCallback" +
     "&_=" +
     Date.now();
 
 
-  script.src = url;
+  console.log(
+    "URL CHECK-IN:",
+    url
+  );
 
-  document.body.appendChild(script);
+
+  /*
+   * Buat script element.
+   */
+
+  const script =
+    document.createElement(
+      "script"
+    );
+
+
+  script.type =
+    "text/javascript";
+
+
+  script.async =
+    true;
+
+
+  script.src =
+    url;
+
+
+  /*
+   * Kalau browser benar-benar
+   * gagal memuat script.
+   */
+
+  script.onerror =
+    function(error){
+
+      console.error(
+        "JSONP SCRIPT ERROR:",
+        error
+      );
+
+
+      if(timeoutCheckIn){
+
+        clearTimeout(
+          timeoutCheckIn
+        );
+
+        timeoutCheckIn = null;
+      }
+
+
+      sedangProses = false;
+
+
+      status(
+
+        "<b>SERVER TIDAK DAPAT DIHUBUNGI</b>" +
+
+        "<br><br>" +
+
+        "Browser gagal memuat respons server Check-In." +
+
+        "<br><br>" +
+
+        "<small>" +
+
+        "Periksa koneksi internet dan coba scan kembali." +
+
+        "</small>",
+
+        "err"
+      );
+
+    };
+
+
+  /*
+   * Masukkan script ke HEAD.
+   */
+
+  document
+    .head
+    .appendChild(
+      script
+    );
+
+
+  /*
+   * Timeout 15 detik.
+   */
+
+  timeoutCheckIn =
+    setTimeout(
+
+      function(){
+
+        if(!sedangProses){
+
+          return;
+        }
+
+
+        sedangProses = false;
+
+
+        status(
+
+          "<b>SERVER TIDAK MERESPONS</b>" +
+
+          "<br><br>" +
+
+          "Server Check-In tidak memberikan jawaban dalam 15 detik.",
+
+          "err"
+        );
+
+
+      },
+
+      15000
+    );
+
 }
 
 
-/* =========================
-   STOP
-========================= */
+/* =========================================================
+   STOP SCANNER
+========================================================= */
 
 async function stopScanner(){
+
+  /*
+   * Batalkan proses timeout.
+   */
+
+  if(timeoutCheckIn){
+
+    clearTimeout(
+      timeoutCheckIn
+    );
+
+    timeoutCheckIn = null;
+  }
+
+
+  /*
+   * Stop kamera.
+   */
 
   if(scanner){
 
     try{
+
       await scanner.stop();
-    }catch(e){}
+
+    }catch(error){
+
+      console.log(
+        "Scanner stop:",
+        error
+      );
+
+    }
+
 
     try{
+
       await scanner.clear();
-    }catch(e){}
+
+    }catch(error){
+
+      console.log(
+        "Scanner clear:",
+        error
+      );
+
+    }
+
   }
 
+
   scanner = null;
+
   aktif = false;
+
   sedangProses = false;
+
 
   document
     .getElementById("btnStart")
     .classList.remove("hidden");
 
+
   document
     .getElementById("btnStop")
     .classList.add("hidden");
+
 
   status(
     "Scanner dihentikan.",
     "info"
   );
+
 }
 
 
-/* =========================
+/* =========================================================
    ESCAPE HTML
-========================= */
+========================================================= */
 
 function escapeHtml(value){
 
-  return String(value || "")
-    .replace(/&/g,"&amp;")
-    .replace(/</g,"&lt;")
-    .replace(/>/g,"&gt;")
-    .replace(/"/g,"&quot;")
-    .replace(/'/g,"&#039;");
+  return String(
+    value || ""
+  )
+  .replace(
+    /&/g,
+    "&amp;"
+  )
+  .replace(
+    /</g,
+    "&lt;"
+  )
+  .replace(
+    />/g,
+    "&gt;"
+  )
+  .replace(
+    /"/g,
+    "&quot;"
+  )
+  .replace(
+    /'/g,
+    "&#039;"
+  );
+
 }
 
 </script>
