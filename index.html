@@ -624,8 +624,24 @@ function tampilkanTombolBukaCheckIn(url) {
 
 
 /* =====================================================
+   SCAN GAGAL
+===================================================== */
+
+function onScanFailure(error) {
+
+  /*
+    QR belum terbaca.
+    Ini normal dan scanner tetap berjalan.
+  */
+
+}
+
+
+/* =====================================================
    STOP CAMERA
 ===================================================== */
+
+
 
 async function stopScanner() {
 
